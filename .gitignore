@@ -1,0 +1,36 @@
+.gradle/
+.kotlin/
+build/
+app/build/
+local.properties
+*.iml
+.idea/
+
+# Android / Gradle generated files
+captures/
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+
+# Local environment and secrets
+*.keystore
+*.jks
+*.p12
+*.pem
+*.key
+*.env
+.env
+.env.*
+secrets.properties
+apikey.properties
+local-secrets.properties
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+*.swp
+Thumbs.db
+.DS_Store
