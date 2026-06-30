@@ -32,6 +32,7 @@ fun CreateScreen(
     onScenarioSelected: (CreationScenario) -> Unit,
     onInputChanged: (String) -> Unit,
     onUseMockImage: () -> Unit,
+    onChooseImage: () -> Unit,
     onGenerate: () -> Unit,
     onEdit: () -> Unit,
     onFavorite: () -> Unit,
@@ -74,8 +75,16 @@ fun CreateScreen(
         )
 
         if (state.selectedScenario == CreationScenario.ImageDescription) {
-            OutlinedButton(onClick = onUseMockImage) {
-                Text("选择模拟图片")
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(onClick = onChooseImage) {
+                    Text("Choose image")
+                }
+                OutlinedButton(onClick = onUseMockImage) {
+                    Text("Use Mock image")
+                }
+            }
+            state.selectedImageUri?.let {
+                Text("Selected image: ${it.take(48)}...")
             }
         }
 
@@ -133,4 +142,3 @@ private fun ScenarioCard(
         }
     )
 }
-

@@ -20,3 +20,14 @@
 - Do not add an account system in the mock phase because the contest demo only needs local app behavior.
 - Do not add multi-model switching yet because it would increase UI and configuration complexity before the core flow is proven.
 - Do not add cloud sync because it requires backend, auth, privacy, and network reliability work outside the current milestone.
+
+## 2026-06-29 - Stage 3 Real API Integration
+
+- Keep `MockModelClient` as the stable fallback path for demos and offline/error situations.
+- Add a single OpenAI-compatible Real mode rather than provider selection or multi-model comparison.
+- Add only OkHttp for HTTP calls. Use Android `org.json` for request and response JSON to avoid extra serialization dependencies.
+- Add only `android.permission.INTERNET`; Photo Picker does not require broad media read permissions for this stage.
+- Store API Key with Android Keystore backed AES-GCM encryption. SharedPreferences stores configuration values plus encrypted API Key ciphertext and IV, not the plaintext key.
+- Settings exposes Base URL, Text Model, and Vision Model so users can configure one compatible service.
+- Image description attempts vision format when an image is selected. If reading the image, request size, provider support, network, auth, or response parsing fails, the app falls back to Mock description with a readable explanation.
+- Still deferred: account system, provider comparison, cloud sync, Room, SQLCipher, complex image editing, and encrypted history database.

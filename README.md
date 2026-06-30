@@ -37,8 +37,11 @@ Build an Android AI content creation tool that supports text generation, image d
 
 - Mock version of the complete creation flow is implemented.
 - The app supports scene selection, input, mock AI generation, result display, editing, format conversion, history/favorite records, and Android system sharing.
-- Current model client is `MockModelClient`.
-- No real model API is connected yet, and no API key is stored in the project.
+- Current model access keeps `MockModelClient` and adds `RealModelClient` behind the same `ModelClient` interface.
+- Settings supports Mock / Real mode, Base URL, text model, vision model, and API Key entry.
+- API Key is entered only in the app Settings screen and stored locally with Android Keystore backed AES-GCM encryption.
+- Real mode uses an OpenAI-compatible Chat Completions endpoint.
+- Image description supports Android Photo Picker selection. Real vision calls are attempted when a selected image and vision model are configured; failures fall back to Mock description with a user-readable message.
 
 ## Mock Demo Paths
 
@@ -53,11 +56,33 @@ Build an Android AI content creation tool that supports text generation, image d
 
 ## Next Stage Plan
 
-- Replace `MockModelClient` with a real model API client behind the same interface.
-- Add secure API key input and storage.
+- Keep `MockModelClient` as a stable demo fallback while improving `RealModelClient`.
+- Test Real mode on a real device with a user-entered API Key.
 - Replace temporary in-memory history with Room plus Android Keystore based encryption.
 - Add exception handling for network, API, and storage failures.
 - Collect screenshots or screen recordings for contest evidence.
+
+## Real API Configuration
+
+1. Open Settings in the app.
+2. Switch mode from `Mock` to `Real`.
+3. Enter the API Key on the device and tap `Save API Key`.
+4. Confirm the status changes to `configured (hidden)`.
+5. Configure Base URL, Text Model, and Vision Model if needed.
+
+Do not put real API keys in source code, Git commits, README files, docs, logs, prompts, screenshots, or bug reports.
+
+Default OpenAI-compatible values:
+
+- Base URL: `https://api.openai.com/v1`
+- Text Model: `gpt-4o-mini`
+- Vision Model: `gpt-4o-mini`
+
+Current limitations:
+
+- The app targets OpenAI-compatible Chat Completions style APIs.
+- History remains in-memory for this stage.
+- Vision support depends on the configured service. If the call fails, image description falls back to Mock output.
 
 ## Build
 
