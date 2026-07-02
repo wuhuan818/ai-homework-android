@@ -30,6 +30,7 @@ import com.aihomework.aicontentcreator.data.settings.ModelMode
 fun SettingsScreen(
     settings: AppSettings,
     apiKeyInput: String,
+    historyStorageStatus: String,
     message: String?,
     onModeChanged: (ModelMode) -> Unit,
     onBaseUrlChanged: (String) -> Unit,
@@ -127,6 +128,9 @@ fun SettingsScreen(
         }
 
         Text("Storage: ${settings.keyStorageDescription}")
+        Text("History storage: $historyStorageStatus")
+        Text("History encryption: Android Keystore + AES-GCM")
+        Text("Security note: real API Keys are hidden and are not written to logs.")
         Text("Real mode uses one OpenAI-compatible Chat Completions endpoint.")
     }
 }

@@ -38,3 +38,37 @@ Capture these screenshots or short recordings:
 9. Image description result, either Real vision output or Mock fallback message.
 10. Successful `assembleDebug` output.
 11. Successful `adb install -r app\build\outputs\apk\debug\app-debug.apk` output on a real device.
+
+## Stage 4 Encrypted History Evidence
+
+Capture these screenshots, recordings, or terminal snippets:
+
+1. Generate one Mock mode result with a recognizable phrase such as `LOCAL-VERIFY-2026`.
+2. Favorite the result or edit and save it.
+3. Close and reopen the app, then confirm the History page still shows the item.
+4. Capture the History page showing the storage status block.
+5. Capture the Settings page showing API Key status and history encryption status.
+6. Inspect the app's debug SharedPreferences file and confirm the recognizable phrase is not readable as plaintext.
+7. Save the successful `assembleDebug` output and, if a device is connected, the successful `adb install` output.
+
+Suggested commands:
+
+```powershell
+adb devices
+adb shell run-as com.aihomework.aicontentcreator ls shared_prefs
+adb shell run-as com.aihomework.aicontentcreator cat shared_prefs/ai_content_creator_history.xml
+adb shell run-as com.aihomework.aicontentcreator cat shared_prefs/ai_content_creator_history.xml | findstr LOCAL-VERIFY-2026
+```
+
+Expected result:
+
+- The history preference file contains fields such as `history_cipher_text`, `history_iv`, `version`, and `updated_at`.
+- The generated content phrase does not appear directly in the XML output.
+- If `findstr LOCAL-VERIFY-2026` returns no matching line, record that as evidence that the exported preference file does not expose the plaintext test phrase.
+
+If `run-as` is not available for the installed build, use Android Studio Device Explorer:
+
+1. Select the connected device.
+2. Open `data/data/com.aihomework.aicontentcreator/shared_prefs`.
+3. Export or open `ai_content_creator_history.xml`.
+4. Search for the recognizable test phrase and record that it is not visible as plaintext.

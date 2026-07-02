@@ -31,3 +31,12 @@
 - Settings exposes Base URL, Text Model, and Vision Model so users can configure one compatible service.
 - Image description attempts vision format when an image is selected. If reading the image, request size, provider support, network, auth, or response parsing fails, the app falls back to Mock description with a readable explanation.
 - Still deferred: account system, provider comparison, cloud sync, Room, SQLCipher, complex image editing, and encrypted history database.
+
+## 2026-07-01 - Stage 4 Encrypted Local History
+
+- Store history and favorite state locally so app restarts preserve generated, edited, and favorited content.
+- Use Android Keystore backed AES-GCM because it keeps the AES key non-exportable and stores only ciphertext plus IV in SharedPreferences.
+- Store history as a single encrypted JSON blob for this stage because the app only needs a small local history list and simple favorite toggles.
+- Do not add SQLCipher now because it would add database setup and dependency complexity that is not needed for the current evidence requirement.
+- Do not add Room now because the current repository can preserve its `StateFlow` API with less risk and no schema migration work.
+- Current limitation: a single encrypted blob is not ideal for large histories or advanced queries; future stages can migrate to Room or SQLCipher if search, paging, or structured history management becomes necessary.

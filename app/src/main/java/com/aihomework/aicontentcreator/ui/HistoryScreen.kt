@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -25,16 +26,21 @@ import java.util.Locale
 fun HistoryScreen(
     state: HistoryUiState,
     onOpenForEdit: (HistoryItem) -> Unit,
-    onToggleFavorite: (Long) -> Unit
+    onToggleFavorite: (Long) -> Unit,
+    onClearHistory: () -> Unit
 ) {
     Column(
         modifier = Modifier.padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text("历史与收藏", style = MaterialTheme.typography.headlineSmall)
+        Text("History and Favorites", style = MaterialTheme.typography.headlineSmall)
+        StorageStatusBlock(state.storageStatus)
         if (state.items.isEmpty()) {
-            Text("暂无历史记录。请先在创作页生成内容。")
+            Text("No history yet. Generate content from the Create page first.")
         } else {
+            Button(onClick = onClearHistory) {
+                Text("Clear history")
+            }
             LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 items(state.items, key = { it.id }) { item ->
                     HistoryCard(
@@ -44,6 +50,22 @@ fun HistoryScreen(
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun StorageStatusBlock(storageStatus: String) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Text("Storage status", style = MaterialTheme.typography.titleMedium)
+            Text("History records: locally saved when generated or updated")
+            Text("Method: Android Keystore + AES-GCM")
+            Text("Plaintext: generated content is not written directly to local files")
+            Text(storageStatus)
         }
     }
 }
@@ -65,12 +87,12 @@ private fun HistoryCard(
         ) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(item.scenario.displayName, style = MaterialTheme.typography.titleMedium)
-                Text(if (item.isFavorite) "已收藏" else "未收藏")
+                Text(if (item.isFavorite) "Favorited" else "Not favorited")
             }
             Text(formatTime(item.createdAtMillis), style = MaterialTheme.typography.bodySmall)
             Text(item.summary)
             OutlinedButton(onClick = onToggleFavorite) {
-                Text(if (item.isFavorite) "取消收藏" else "收藏")
+                Text(if (item.isFavorite) "Unfavorite" else "Favorite")
             }
         }
     }
@@ -79,4 +101,3 @@ private fun HistoryCard(
 private fun formatTime(timeMillis: Long): String {
     return SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date(timeMillis))
 }
-

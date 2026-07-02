@@ -31,7 +31,8 @@ Build an Android AI content creation tool that supports text generation, image d
 - Jetpack Compose
 - Material 3
 - MVVM-ready package structure
-- Planned: Room, Retrofit/OkHttp, Android Keystore
+- OkHttp for the current OpenAI-compatible real API client
+- Android Keystore + AES-GCM for API Key and history encryption
 
 ## Current Progress
 
@@ -42,6 +43,8 @@ Build an Android AI content creation tool that supports text generation, image d
 - API Key is entered only in the app Settings screen and stored locally with Android Keystore backed AES-GCM encryption.
 - Real mode uses an OpenAI-compatible Chat Completions endpoint.
 - Image description supports Android Photo Picker selection. Real vision calls are attempted when a selected image and vision model are configured; failures fall back to Mock description with a user-readable message.
+- History and favorite state are persisted locally after generation, edit, and favorite changes.
+- Generated and edited history content is stored as an encrypted JSON blob in SharedPreferences using Android Keystore backed AES-GCM.
 
 ## Mock Demo Paths
 
@@ -56,10 +59,10 @@ Build an Android AI content creation tool that supports text generation, image d
 
 ## Next Stage Plan
 
-- Keep `MockModelClient` as a stable demo fallback while improving `RealModelClient`.
+- Keep `MockModelClient` as a stable demo fallback while improving device evidence.
 - Test Real mode on a real device with a user-entered API Key.
-- Replace temporary in-memory history with Room plus Android Keystore based encryption.
-- Add exception handling for network, API, and storage failures.
+- Consider Room or SQLCipher only if future history querying grows beyond a single encrypted local blob.
+- Add more detailed exception handling for storage failure states if needed.
 - Collect screenshots or screen recordings for contest evidence.
 
 ## Real API Configuration
@@ -81,8 +84,25 @@ Default OpenAI-compatible values:
 Current limitations:
 
 - The app targets OpenAI-compatible Chat Completions style APIs.
-- History remains in-memory for this stage.
 - Vision support depends on the configured service. If the call fails, image description falls back to Mock output.
+- History is encrypted as one local JSON blob, so it is simple and suitable for this contest stage but not optimized for advanced search.
+
+## Verify Encrypted History Storage
+
+1. Install the debug APK and open the app.
+2. Use Mock mode to generate content with a recognizable test phrase.
+3. Favorite the result or edit and save it.
+4. Close and reopen the app, then confirm History still shows the item.
+5. Inspect app SharedPreferences and confirm the recognizable phrase is not visible as plaintext.
+
+Useful commands for a debug build:
+
+```powershell
+adb shell run-as com.aihomework.aicontentcreator ls shared_prefs
+adb shell run-as com.aihomework.aicontentcreator cat shared_prefs/ai_content_creator_history.xml
+```
+
+If `run-as` is not available on the device, use Android Studio Device Explorer to inspect the app's `shared_prefs` directory for the debug build.
 
 ## Build
 

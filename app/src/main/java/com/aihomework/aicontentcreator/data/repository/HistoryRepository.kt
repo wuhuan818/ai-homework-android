@@ -1,15 +1,21 @@
 package com.aihomework.aicontentcreator.data.repository
 
+import android.content.Context
+import com.aihomework.aicontentcreator.data.history.EncryptedHistoryStorage
+import com.aihomework.aicontentcreator.data.history.HistoryStorageStatus
 import com.aihomework.aicontentcreator.data.model.CreationResult
 import com.aihomework.aicontentcreator.data.model.HistoryItem
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.update
 
-class HistoryRepository {
-    private val history = MutableStateFlow<List<HistoryItem>>(emptyList())
+class HistoryRepository(context: Context) {
+    private val storage = EncryptedHistoryStorage(context)
+    private val initialLoad = storage.loadHistory()
+    private val history = MutableStateFlow(initialLoad.items)
+    private val storageStatus = MutableStateFlow(initialLoad.status)
 
     val items: StateFlow<List<HistoryItem>> = history
+    val status: StateFlow<HistoryStorageStatus> = storageStatus
 
     fun addResult(result: CreationResult) {
         val item = HistoryItem(
@@ -19,11 +25,11 @@ class HistoryRepository {
             content = result.content,
             createdAtMillis = result.createdAtMillis
         )
-        history.update { current -> listOf(item) + current }
+        updateHistory { current -> listOf(item) + current }
     }
 
     fun updateContent(id: Long, content: String) {
-        history.update { current ->
+        updateHistory { current ->
             current.map { item ->
                 if (item.id == id) item.copy(content = content) else item
             }
@@ -31,11 +37,22 @@ class HistoryRepository {
     }
 
     fun toggleFavorite(id: Long) {
-        history.update { current ->
+        updateHistory { current ->
             current.map { item ->
                 if (item.id == id) item.copy(isFavorite = !item.isFavorite) else item
             }
         }
     }
-}
 
+    fun clearHistory() {
+        storage.clearHistory()
+        history.value = emptyList()
+        storageStatus.value = HistoryStorageStatus.NotInitialized
+    }
+
+    private fun updateHistory(transform: (List<HistoryItem>) -> List<HistoryItem>) {
+        val updated = transform(history.value)
+        history.value = updated
+        storageStatus.value = storage.saveHistory(updated)
+    }
+}

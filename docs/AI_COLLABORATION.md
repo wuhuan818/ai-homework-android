@@ -53,3 +53,27 @@ AI risk notes:
 - API formats may differ across OpenAI-compatible providers.
 - Vision support may not be available even when text generation works.
 - Large images can exceed request limits and should be handled by the current size guard or a future compression step.
+
+## 2026-07-01 - Stage 4 Encrypted History Storage
+
+Codex generated or modified:
+
+- `CryptoManager` for Android Keystore backed AES-GCM encryption and decryption.
+- `EncryptedHistoryStorage` for encrypted JSON history persistence in SharedPreferences.
+- `HistoryRepository` so generated results, edits, favorite toggles, and clears are saved locally.
+- History and Settings UI status text for encrypted storage visibility.
+- README, decision notes, and evidence instructions for checking persistence and encrypted storage.
+
+Human verification points:
+
+- Generate Mock content with a recognizable phrase, then close and reopen the app.
+- Confirm History still contains the generated or edited item.
+- Export or inspect `shared_prefs/ai_content_creator_history.xml`.
+- Search for the recognizable phrase and confirm it is not present as plaintext.
+- Test Real mode again with a device-entered API Key to confirm the stage 3 path still works.
+
+AI risk notes:
+
+- Encryption must cover generated content, edited content, original input, and favorite state, not just part of the item.
+- Serialization bugs could lose `isFavorite`, scenario, or timestamps when reloading.
+- SharedPreferences files should contain only ciphertext and IV for history content; plaintext generated copy would fail the evidence requirement.

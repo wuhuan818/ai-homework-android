@@ -22,3 +22,10 @@
 - API Key entry happens only inside the Android Settings screen.
 - Do not hardcode, log, document, or commit real API keys.
 - Store the API Key locally as Android Keystore encrypted AES-GCM ciphertext plus IV in SharedPreferences.
+
+## Stage 4 Encrypted History
+
+- Persist history and favorite state locally after generate, edit, favorite, and clear operations.
+- Use Android Keystore backed AES-GCM and SharedPreferences ciphertext/IV fields for the stage 4 encrypted storage requirement.
+- Keep the implementation as an encrypted JSON blob instead of adding Room or SQLCipher in this stage.
+- Defer database-backed history until the app needs search, paging, migrations, or larger structured history data.

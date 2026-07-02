@@ -28,6 +28,7 @@ import androidx.compose.ui.platform.LocalContext
 import com.aihomework.aicontentcreator.data.ai.MockModelClient
 import com.aihomework.aicontentcreator.data.ai.ModelClientException
 import com.aihomework.aicontentcreator.data.ai.RealModelClient
+import com.aihomework.aicontentcreator.data.history.HistoryStorageStatus
 import com.aihomework.aicontentcreator.data.model.CreationRequest
 import com.aihomework.aicontentcreator.data.model.CreationResult
 import com.aihomework.aicontentcreator.data.model.CreationScenario
@@ -69,8 +70,9 @@ private fun AIContentCreatorApp() {
     val appContext = context.applicationContext
     val scope = rememberCoroutineScope()
     val settingsRepository = remember { SettingsRepository(appContext) }
-    val historyRepository = remember { HistoryRepository() }
+    val historyRepository = remember { HistoryRepository(appContext) }
     val historyItems by historyRepository.items.collectAsState()
+    val historyStorageStatus by historyRepository.status.collectAsState()
 
     var selectedTab by remember { mutableStateOf(AppTab.Create) }
     var createState by remember { mutableStateOf(CreateUiState()) }
@@ -253,19 +255,26 @@ private fun AIContentCreatorApp() {
                         )
 
                         AppTab.History -> HistoryScreen(
-                            state = HistoryUiState(historyItems),
+                            state = HistoryUiState(
+                                items = historyItems,
+                                storageStatus = historyStorageStatus.toDisplayText()
+                            ),
                             onOpenForEdit = { item: HistoryItem ->
                                 editState = item.toEditState()
                                 selectedTab = AppTab.Edit
                             },
                             onToggleFavorite = { id ->
                                 historyRepository.toggleFavorite(id)
+                            },
+                            onClearHistory = {
+                                historyRepository.clearHistory()
                             }
                         )
 
                         AppTab.Settings -> SettingsScreen(
                             settings = settings,
                             apiKeyInput = apiKeyInput,
+                            historyStorageStatus = historyStorageStatus.toDisplayText(),
                             message = settingsMessage,
                             onModeChanged = { mode ->
                                 val updated = settings.copy(mode = mode)
@@ -346,4 +355,13 @@ private fun toPlainText(text: String): String {
         .replace("**", "")
         .replace("__", "")
         .trim()
+}
+
+private fun HistoryStorageStatus.toDisplayText(): String {
+    return when (this) {
+        HistoryStorageStatus.NotInitialized -> "not initialized"
+        HistoryStorageStatus.Encrypted -> "encrypted"
+        HistoryStorageStatus.LoadFailed -> "load failed"
+        HistoryStorageStatus.SaveFailed -> "save failed"
+    }
 }
