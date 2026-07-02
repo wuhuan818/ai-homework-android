@@ -77,3 +77,29 @@ AI risk notes:
 - Encryption must cover generated content, edited content, original input, and favorite state, not just part of the item.
 - Serialization bugs could lose `isFavorite`, scenario, or timestamps when reloading.
 - SharedPreferences files should contain only ciphertext and IV for history content; plaintext generated copy would fail the evidence requirement.
+
+## 2026-07-03 - Stage 5 Basic Image Processing
+
+Codex generated or modified:
+
+- `ImageProcessor` for native Bitmap rotation, text watermark drawing, cache output, and FileProvider content Uri creation.
+- Create screen state and UI controls for selected image status, preview, rotate, watermark text, add watermark, processed-image share, and processing messages.
+- `MainActivity` glue code for image processing actions while preserving the existing Mock / Real generation path.
+- FileProvider manifest and cache path XML limited to processed images under `cache/shared_images`.
+- README, decision notes, and evidence instructions for Stage 5 verification.
+
+Human verification points:
+
+- Select a real device image and confirm the preview/status updates.
+- Tap rotate and confirm the processed image appears changed.
+- Enter visible watermark text and confirm it appears on the processed image.
+- Share the processed image and confirm the Android system share sheet opens.
+- Tap rotate or watermark before choosing an image and confirm the prompt is readable.
+- Re-test Mock and Real generation paths, especially image description, after image processing changes.
+
+AI risk notes:
+
+- Large images can still pressure memory even with downsampling.
+- Photo Picker Uri read access can vary by device/provider, so real-device testing is required.
+- FileProvider authorities and cache paths must remain aligned or image sharing will fail.
+- Processed images are temporary cache files and should not be treated as permanent gallery items.

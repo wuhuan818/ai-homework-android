@@ -40,3 +40,13 @@
 - Do not add SQLCipher now because it would add database setup and dependency complexity that is not needed for the current evidence requirement.
 - Do not add Room now because the current repository can preserve its `StateFlow` API with less risk and no schema migration work.
 - Current limitation: a single encrypted blob is not ideal for large histories or advanced queries; future stages can migrate to Room or SQLCipher if search, paging, or structured history management becomes necessary.
+
+## 2026-07-03 - Stage 5 Basic Image Processing
+
+- Implement only rotation and text watermark because the contest requirement asks for at least two basic image processing abilities.
+- Do not build filters, crop, drawing, multi-image editing, album management, or a complex editor because those would expand scope and UI risk beyond the stage goal.
+- Save processed images in the app cache so results can be shared without requiring gallery writes or broad storage permissions.
+- Use Android native `Bitmap`, `Canvas`, and `Matrix` APIs to avoid large image editing dependencies and keep the feature small and reviewable.
+- Use Android native `ImageDecoder` on Android 9+ for better Photo Picker Uri compatibility, with `BitmapFactory` kept as the older-version fallback.
+- Share processed images through a scoped `FileProvider` that exposes only the `cache/shared_images` directory.
+- Current limitation: very large images are downsampled for processing, and future work can add stronger memory handling only if real-device evidence shows a need.

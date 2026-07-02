@@ -29,6 +29,7 @@ import com.aihomework.aicontentcreator.data.ai.MockModelClient
 import com.aihomework.aicontentcreator.data.ai.ModelClientException
 import com.aihomework.aicontentcreator.data.ai.RealModelClient
 import com.aihomework.aicontentcreator.data.history.HistoryStorageStatus
+import com.aihomework.aicontentcreator.data.image.ImageProcessor
 import com.aihomework.aicontentcreator.data.model.CreationRequest
 import com.aihomework.aicontentcreator.data.model.CreationResult
 import com.aihomework.aicontentcreator.data.model.CreationScenario
@@ -42,11 +43,14 @@ import com.aihomework.aicontentcreator.ui.CreateScreen
 import com.aihomework.aicontentcreator.ui.EditScreen
 import com.aihomework.aicontentcreator.ui.HistoryScreen
 import com.aihomework.aicontentcreator.ui.SettingsScreen
+import com.aihomework.aicontentcreator.ui.shareImage
 import com.aihomework.aicontentcreator.ui.shareText
 import com.aihomework.aicontentcreator.ui.state.CreateUiState
 import com.aihomework.aicontentcreator.ui.state.EditUiState
 import com.aihomework.aicontentcreator.ui.state.HistoryUiState
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -71,6 +75,7 @@ private fun AIContentCreatorApp() {
     val scope = rememberCoroutineScope()
     val settingsRepository = remember { SettingsRepository(appContext) }
     val historyRepository = remember { HistoryRepository(appContext) }
+    val imageProcessor = remember { ImageProcessor(appContext) }
     val historyItems by historyRepository.items.collectAsState()
     val historyStorageStatus by historyRepository.status.collectAsState()
 
@@ -89,6 +94,8 @@ private fun AIContentCreatorApp() {
         } else {
             createState = createState.copy(
                 selectedImageUri = uri.toString(),
+                processedImageUri = null,
+                imageProcessingMessage = "已选择图片，可以旋转或添加文字水印。",
                 input = createState.input.ifBlank { "Selected image" },
                 message = "Image selected."
             )
@@ -120,6 +127,8 @@ private fun AIContentCreatorApp() {
                                     selectedScenario = scenario,
                                     input = "",
                                     selectedImageUri = null,
+                                    processedImageUri = null,
+                                    imageProcessingMessage = null,
                                     result = null,
                                     message = null
                                 )
@@ -128,13 +137,84 @@ private fun AIContentCreatorApp() {
                             onUseMockImage = {
                                 createState = createState.copy(
                                     input = "Mock image: city street at night with bright signs",
-                                    selectedImageUri = null
+                                    selectedImageUri = null,
+                                    processedImageUri = null,
+                                    imageProcessingMessage = null
                                 )
                             },
                             onChooseImage = {
                                 imagePickerLauncher.launch(
                                     PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
                                 )
+                            },
+                            onRotateImage = {
+                                val sourceUri = createState.processedImageUri ?: createState.selectedImageUri
+                                if (sourceUri == null) {
+                                    createState = createState.copy(message = "请先选择图片")
+                                    return@CreateScreen
+                                }
+                                scope.launch {
+                                    createState = createState.copy(
+                                        isImageProcessing = true,
+                                        imageProcessingMessage = "正在旋转图片..."
+                                    )
+                                    val result = withContext(Dispatchers.Default) {
+                                        imageProcessor.rotateImage(sourceUri, 90f)
+                                    }
+                                    createState = if (result.uri != null) {
+                                        createState.copy(
+                                            processedImageUri = result.uri.toString(),
+                                            isImageProcessing = false,
+                                            imageProcessingMessage = "图片已旋转 90 度。"
+                                        )
+                                    } else {
+                                        createState.copy(
+                                            isImageProcessing = false,
+                                            imageProcessingMessage = result.errorMessage,
+                                            message = result.errorMessage
+                                        )
+                                    }
+                                }
+                            },
+                            onWatermarkTextChanged = {
+                                createState = createState.copy(watermarkText = it)
+                            },
+                            onAddWatermark = {
+                                val sourceUri = createState.processedImageUri ?: createState.selectedImageUri
+                                if (sourceUri == null) {
+                                    createState = createState.copy(message = "请先选择图片")
+                                    return@CreateScreen
+                                }
+                                scope.launch {
+                                    createState = createState.copy(
+                                        isImageProcessing = true,
+                                        imageProcessingMessage = "正在添加文字水印..."
+                                    )
+                                    val result = withContext(Dispatchers.Default) {
+                                        imageProcessor.addTextWatermark(sourceUri, createState.watermarkText)
+                                    }
+                                    createState = if (result.uri != null) {
+                                        createState.copy(
+                                            processedImageUri = result.uri.toString(),
+                                            isImageProcessing = false,
+                                            imageProcessingMessage = "文字水印已添加。"
+                                        )
+                                    } else {
+                                        createState.copy(
+                                            isImageProcessing = false,
+                                            imageProcessingMessage = result.errorMessage,
+                                            message = result.errorMessage
+                                        )
+                                    }
+                                }
+                            },
+                            onShareProcessedImage = {
+                                val processedImageUri = createState.processedImageUri
+                                if (processedImageUri == null) {
+                                    createState = createState.copy(message = "请先旋转或添加水印")
+                                } else {
+                                    shareImage(context, processedImageUri)
+                                }
                             },
                             onGenerate = {
                                 val input = createState.input.trim()

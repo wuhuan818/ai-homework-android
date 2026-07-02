@@ -72,3 +72,20 @@ If `run-as` is not available for the installed build, use Android Studio Device 
 2. Open `data/data/com.aihomework.aicontentcreator/shared_prefs`.
 3. Export or open `ai_content_creator_history.xml`.
 4. Search for the recognizable test phrase and record that it is not visible as plaintext.
+
+## Stage 5 Basic Image Processing Evidence
+
+Capture these screenshots or short recordings:
+
+1. Image description scenario after a device image is selected successfully.
+2. Image preview/status before rotation and after tapping `Rotate 90`.
+3. Text watermark input plus the processed image/status after tapping `Add watermark`.
+4. Android system share sheet opened from `Share image` for the processed image.
+5. User-readable failure prompt when tapping rotate or watermark before selecting an image, expected text: `请先选择图片`.
+6. Successful `assembleDebug` output.
+7. Successful `adb install -r app\build\outputs\apk\debug\app-debug.apk` output on a real device.
+
+Notes:
+
+- The processed image is saved under the app cache for sharing evidence and is not expected to appear in the gallery.
+- No broad storage permission should appear in the app permission list.

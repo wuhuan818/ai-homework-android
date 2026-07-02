@@ -45,6 +45,9 @@ Build an Android AI content creation tool that supports text generation, image d
 - Image description supports Android Photo Picker selection. Real vision calls are attempted when a selected image and vision model are configured; failures fall back to Mock description with a user-readable message.
 - History and favorite state are persisted locally after generation, edit, and favorite changes.
 - Generated and edited history content is stored as an encrypted JSON blob in SharedPreferences using Android Keystore backed AES-GCM.
+- Image description now includes basic imported-image processing: rotate 90 degrees and add a text watermark.
+- Image processing is intentionally limited to basic handling, not a complex image editor.
+- Processed images are saved to the app cache and can be shared through the Android system share sheet.
 
 ## Mock Demo Paths
 
@@ -56,6 +59,7 @@ Build an Android AI content creation tool that supports text generation, image d
 6. Save the edit and return to the result display.
 7. Favorite generated content and view it in History.
 8. Share generated or edited text with the Android system share sheet.
+9. In `鍥剧墖鎻忚堪`, choose a device image, rotate it, add a text watermark, and share the processed image.
 
 ## Next Stage Plan
 
@@ -64,6 +68,7 @@ Build an Android AI content creation tool that supports text generation, image d
 - Consider Room or SQLCipher only if future history querying grows beyond a single encrypted local blob.
 - Add more detailed exception handling for storage failure states if needed.
 - Collect screenshots or screen recordings for contest evidence.
+- Collect Stage 5 screenshots for selected image, rotated image, text watermark, image share sheet, and the no-image error prompt.
 
 ## Real API Configuration
 
@@ -86,6 +91,17 @@ Current limitations:
 - The app targets OpenAI-compatible Chat Completions style APIs.
 - Vision support depends on the configured service. If the call fails, image description falls back to Mock output.
 - History is encrypted as one local JSON blob, so it is simple and suitable for this contest stage but not optimized for advanced search.
+- Image processing outputs are temporary cache files, not permanent gallery exports.
+
+## Verify Basic Image Processing
+
+1. Install the debug APK and open the app.
+2. Select the image description scenario.
+3. Tap `Choose image` and select a device image.
+4. Tap `Rotate 90` and confirm the preview/status updates.
+5. Enter watermark text, tap `Add watermark`, and confirm the processed preview/status updates.
+6. Tap `Share image` and confirm the Android share sheet opens.
+7. Without selecting an image, tap an image processing action and confirm the app shows a readable prompt.
 
 ## Verify Encrypted History Storage
 
