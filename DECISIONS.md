@@ -35,3 +35,9 @@
 - Improve Chinese UI wording and Prompt quality before adding more features because the app is now functionally usable and needs to be clear for contest demonstration.
 - Keep demo mode and real model mode visibly distinct so local template output is not mistaken for a real model response.
 - Do not add configuration presets or multi-model comparison in this stage because they would expand scope beyond polishing the existing demo-ready flow.
+
+## Stage 7 Profile Presets And Image Description Styles
+
+- Add 3 interface configuration presets for backup endpoint switching, not for multi-model scoring, ranking, or speed comparison.
+- Keep each preset's API Key independently encrypted and keep full keys out of plaintext settings objects and UI.
+- Add image description styles because they improve demo flexibility while preserving the existing single-request, single-result generation flow.

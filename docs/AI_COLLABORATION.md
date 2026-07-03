@@ -128,3 +128,27 @@ AI risk notes:
 - Prompt improvements can guide output structure but cannot guarantee every provider will follow format perfectly.
 - UI wording should be reviewed on device because button width and line wrapping may differ from desktop code review.
 - Real model behavior depends on the configured endpoint and model capability.
+
+## 2026-07-03 - Stage 7 Profile Presets And Image Description Styles
+
+Codex generated or modified:
+
+- Settings storage for 3 lightweight API configuration presets.
+- Settings UI for selecting the active preset, editing the current preset, and saving or clearing its encrypted API Key.
+- Real model generation path so API calls read Base URL, text model, vision model, and API Key from the active preset.
+- Image description state, UI selector, Mock templates, and Real prompts for `客观描述`、`社交配文`、`商品文案`.
+- README, decision notes, and evidence plan for the stage 7 verification path.
+
+Human verification points:
+
+- Confirm preset switching updates the current enabled configuration.
+- Confirm each profile's API Key status is displayed only as `已配置` or `未配置`.
+- Confirm Real mode calls use the active profile and show a readable prompt when the active profile has no key, Base URL, or model name.
+- Confirm the three image description styles produce visibly different Mock and Real outputs.
+- Re-test Mock / Real generation, image rotation, watermark, sharing, and encrypted history.
+
+AI risk notes:
+
+- Existing single-profile settings and API Key data are preserved for the default profile, but should be checked on an upgraded install.
+- Some compatible endpoints may use different model names or vision support behavior.
+- Style prompts guide output but cannot guarantee every provider follows the requested structure exactly.

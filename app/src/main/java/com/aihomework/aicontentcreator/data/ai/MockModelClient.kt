@@ -3,6 +3,7 @@ package com.aihomework.aicontentcreator.data.ai
 import com.aihomework.aicontentcreator.data.model.CreationRequest
 import com.aihomework.aicontentcreator.data.model.CreationResult
 import com.aihomework.aicontentcreator.data.model.CreationScenario
+import com.aihomework.aicontentcreator.data.model.ImageDescriptionStyle
 import kotlinx.coroutines.delay
 
 class MockModelClient : ModelClient {
@@ -28,14 +29,10 @@ class MockModelClient : ModelClient {
                 短文案：用真实克制的语言介绍「$cleanInput」，不夸大、不硬推。
                 """.trimIndent()
 
-            CreationScenario.ImageDescription ->
-                """
-                【演示模式生成】
-                画面主体：根据线索「$cleanInput」生成一段示例图片说明。
-                背景与氛围：偏生活化、可发布，不代表真实模型识图结果。
-                适合社交平台发布的配文：把眼前这一幕收进今天的记忆里。
-                可能的标签：#图片记录 #生活片刻 #演示模式
-                """.trimIndent()
+            CreationScenario.ImageDescription -> imageDescriptionContent(
+                input = cleanInput,
+                style = request.imageDescriptionStyle
+            )
         }
 
         val now = System.currentTimeMillis()
@@ -46,5 +43,38 @@ class MockModelClient : ModelClient {
             content = content,
             createdAtMillis = now
         )
+    }
+
+    private fun imageDescriptionContent(input: String, style: ImageDescriptionStyle): String {
+        return when (style) {
+            ImageDescriptionStyle.Objective ->
+                """
+                【演示模式生成】
+                图片描述风格：${style.displayName}
+                画面主体：根据线索「$input」生成一段客观示例说明。
+                背景环境：以用户提供的图片线索为准，不代表真实识图结论。
+                颜色与氛围：保持中性描述，避免夸张联想。
+                可见细节：仅整理已提供线索，不编造不存在的内容。
+                """.trimIndent()
+
+            ImageDescriptionStyle.SocialCaption ->
+                """
+                【演示模式生成】
+                图片描述风格：${style.displayName}
+                画面简述：根据线索「$input」整理一段轻量图片说明。
+                社交配文：把眼前这一幕收进今天的记忆里，简单一点，也很好。
+                标签：#图片记录 #生活片刻 #演示模式
+                """.trimIndent()
+
+            ImageDescriptionStyle.ProductCopy ->
+                """
+                【演示模式生成】
+                图片描述风格：${style.displayName}
+                可能的商品/主体：根据线索「$input」判断主体，无法确认时更适合普通图片描述。
+                卖点表达：围绕可见主体做克制表达，不编造品牌、价格、参数或功效。
+                使用场景：适合基础展示、介绍页或素材整理。
+                短文案：用清晰自然的语言呈现画面中的主体。
+                """.trimIndent()
+        }
     }
 }

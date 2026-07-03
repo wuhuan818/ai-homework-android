@@ -107,3 +107,25 @@ Additional checks:
 - Verify demo mode output includes `【演示模式生成】`.
 - Verify Real mode with no model key shows `尚未配置模型密钥，请前往设置页配置。`.
 - Verify processed image description uses the rotated or watermarked image when available.
+
+## Stage 7 Profile Presets And Image Description Style Evidence
+
+Capture these screenshots or short recordings:
+
+1. Settings page showing the three interface configuration presets: `默认配置`、`备用配置一`、`备用配置二`.
+2. Settings page showing the current enabled profile after switching presets.
+3. API Key status showing `已配置` without the full key.
+4. Image description screen showing the style selector and current style prompt.
+5. `客观描述` generation result.
+6. `社交配文` generation result.
+7. `商品文案` generation result.
+8. Real mode error prompt when the active profile is missing an API Key, Base URL, or model name.
+9. Successful `assembleDebug` output.
+10. Successful `adb install -r app\build\outputs\apk\debug\app-debug.apk` output on a real device, if a device is connected.
+
+Additional checks:
+
+- Verify only the active profile is used for Real mode calls.
+- Verify the three styles produce different prompts and different Mock templates.
+- Verify `git diff` does not contain a real API Key prefix or real authorization credential.
+- Re-test image rotation, watermark, share, and encrypted history because this stage must not break those paths.

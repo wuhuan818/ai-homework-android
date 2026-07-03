@@ -133,6 +133,9 @@ private fun AIContentCreatorApp() {
                                     message = null
                                 )
                             },
+                            onImageDescriptionStyleSelected = { style ->
+                                createState = createState.copy(imageDescriptionStyle = style)
+                            },
                             onInputChanged = { createState = createState.copy(input = it) },
                             onUseMockImage = {
                                 createState = createState.copy(
@@ -231,7 +234,7 @@ private fun AIContentCreatorApp() {
                                             MockModelClient()
                                         } else {
                                             RealModelClient(appContext, settings) {
-                                                settingsRepository.getApiKey()
+                                                settingsRepository.getApiKey(settings.activeProfile.id)
                                             }
                                         }
                                         val result = CreationRepository(client).generate(
@@ -239,7 +242,8 @@ private fun AIContentCreatorApp() {
                                                 scenario = createState.selectedScenario,
                                                 input = input,
                                                 imageLabel = if (hasImage) "已选择图片" else null,
-                                                imageUri = imageUri
+                                                imageUri = imageUri,
+                                                imageDescriptionStyle = createState.imageDescriptionStyle
                                             )
                                         )
                                         historyRepository.addResult(result)
@@ -362,9 +366,24 @@ private fun AIContentCreatorApp() {
                                 settings = updated
                                 settingsRepository.saveSettings(updated)
                             },
-                            onBaseUrlChanged = { settings = settings.copy(baseUrl = it) },
-                            onTextModelChanged = { settings = settings.copy(textModel = it) },
-                            onVisionModelChanged = { settings = settings.copy(visionModel = it) },
+                            onActiveProfileChanged = { profileId ->
+                                val updated = settings.copy(activeProfileId = profileId)
+                                settings = updated
+                                apiKeyInput = ""
+                                settingsRepository.saveSettings(updated)
+                            },
+                            onProfileNameChanged = { name ->
+                                settings = settings.updateActiveProfile { it.copy(name = name) }
+                            },
+                            onBaseUrlChanged = { baseUrl ->
+                                settings = settings.updateActiveProfile { it.copy(baseUrl = baseUrl) }
+                            },
+                            onTextModelChanged = { textModel ->
+                                settings = settings.updateActiveProfile { it.copy(textModel = textModel) }
+                            },
+                            onVisionModelChanged = { visionModel ->
+                                settings = settings.updateActiveProfile { it.copy(visionModel = visionModel) }
+                            },
                             onApiKeyInputChanged = { apiKeyInput = it },
                             onSaveSettings = {
                                 settingsRepository.saveSettings(settings)
@@ -372,7 +391,7 @@ private fun AIContentCreatorApp() {
                                 settingsMessage = "设置已保存。"
                             },
                             onSaveApiKey = {
-                                if (settingsRepository.saveApiKey(apiKeyInput)) {
+                                if (settingsRepository.saveApiKey(apiKeyInput, settings.activeProfile.id)) {
                                     apiKeyInput = ""
                                     settings = settingsRepository.loadSettings()
                                     settingsMessage = "模型密钥已加密保存。"
@@ -381,7 +400,7 @@ private fun AIContentCreatorApp() {
                                 }
                             },
                             onClearApiKey = {
-                                settingsRepository.clearApiKey()
+                                settingsRepository.clearApiKey(settings.activeProfile.id)
                                 apiKeyInput = ""
                                 settings = settingsRepository.loadSettings()
                                 settingsMessage = "模型密钥已清除。"

@@ -34,6 +34,8 @@ fun SettingsScreen(
     historyStorageStatus: String,
     message: String?,
     onModeChanged: (ModelMode) -> Unit,
+    onActiveProfileChanged: (String) -> Unit,
+    onProfileNameChanged: (String) -> Unit,
     onBaseUrlChanged: (String) -> Unit,
     onTextModelChanged: (String) -> Unit,
     onVisionModelChanged: (String) -> Unit,
@@ -76,7 +78,28 @@ fun SettingsScreen(
             }
         }
 
-        SettingsSection(title = "接口配置") {
+        SettingsSection(title = "接口配置预设") {
+            Text("该功能用于保存备用接口配置，不进行模型评分或横向对比。")
+            settings.profiles.forEach { profile ->
+                FilterChip(
+                    selected = profile.id == settings.activeProfile.id,
+                    onClick = { onActiveProfileChanged(profile.id) },
+                    label = {
+                        Column {
+                            Text(profile.name.ifBlank { "未命名配置" })
+                            Text(if (profile.hasApiKey) "模型密钥：已配置" else "模型密钥：未配置")
+                        }
+                    }
+                )
+            }
+            Text("当前启用配置：${settings.activeProfile.name.ifBlank { "未命名配置" }}")
+            OutlinedTextField(
+                modifier = Modifier.fillMaxWidth(),
+                value = settings.activeProfile.name,
+                onValueChange = onProfileNameChanged,
+                label = { Text("配置名称") },
+                singleLine = true
+            )
             OutlinedTextField(
                 modifier = Modifier.fillMaxWidth(),
                 value = settings.baseUrl,
@@ -102,7 +125,7 @@ fun SettingsScreen(
                 onClick = onSaveSettings,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("保存接口配置")
+                Text("保存当前配置")
             }
         }
 

@@ -6,6 +6,7 @@ import android.util.Base64
 import com.aihomework.aicontentcreator.data.model.CreationRequest
 import com.aihomework.aicontentcreator.data.model.CreationResult
 import com.aihomework.aicontentcreator.data.model.CreationScenario
+import com.aihomework.aicontentcreator.data.model.ImageDescriptionStyle
 import com.aihomework.aicontentcreator.data.settings.AppSettings
 import java.io.ByteArrayOutputStream
 import java.io.IOException
@@ -37,7 +38,7 @@ class RealModelClient(
         validateCommonSettings(request.input)
         val apiKey = apiKeyProvider()?.trim()
         if (apiKey.isNullOrBlank()) {
-            throw ModelClientException("真实模型模式需要模型密钥，请先在设置页配置。")
+            throw ModelClientException("当前配置尚未填写模型密钥，请前往设置页补充。")
         }
 
         if (request.scenario == CreationScenario.ImageDescription && request.imageUri != null) {
@@ -74,7 +75,7 @@ class RealModelClient(
         val imageUri = request.imageUri ?: throw ModelClientException("请先选择图片。")
         val imageDataUrl = readImageAsDataUrl(imageUri)
         val content = JSONArray()
-            .put(JSONObject().put("type", "text").put("text", IMAGE_PROMPT))
+            .put(JSONObject().put("type", "text").put("text", imagePromptFor(request.imageDescriptionStyle)))
             .put(
                 JSONObject()
                     .put("type", "image_url")
@@ -98,7 +99,7 @@ class RealModelClient(
         messages: JSONArray
     ): String = withContext(Dispatchers.IO) {
         if (model.isBlank()) {
-            throw ModelClientException("模型名称为空，请检查设置页。")
+            throw ModelClientException("当前配置的模型名称为空，请前往设置页补充。")
         }
 
         val body = JSONObject()
@@ -175,7 +176,7 @@ class RealModelClient(
 
     private fun validateCommonSettings(input: String) {
         if (settings.baseUrl.isBlank()) {
-            throw ModelClientException("接口地址为空，请检查设置页。")
+            throw ModelClientException("当前配置的接口地址为空，请前往设置页补充。")
         }
         if (input.length > MAX_INPUT_CHARS) {
             throw ModelClientException("输入内容过长，请缩短后重试。")
@@ -211,19 +212,61 @@ class RealModelClient(
                 """.trimIndent()
 
             CreationScenario.ImageDescription ->
-                IMAGE_PROMPT
+                imagePromptFor(request.imageDescriptionStyle)
         }
     }
 
     private fun CreationRequest.toResult(content: String): CreationResult {
         val now = System.currentTimeMillis()
+        val finalContent = if (scenario == CreationScenario.ImageDescription) {
+            "图片描述风格：${imageDescriptionStyle.displayName}\n\n$content"
+        } else {
+            content
+        }
         return CreationResult(
             id = now,
             scenario = scenario,
             originalInput = input.ifBlank { imageLabel ?: "已选择图片" },
-            content = content,
+            content = finalContent,
             createdAtMillis = now
         )
+    }
+
+    private fun imagePromptFor(style: ImageDescriptionStyle): String {
+        return when (style) {
+            ImageDescriptionStyle.Objective ->
+                """
+                请根据图片内容进行客观中文描述。
+                输出包括：
+                1. 画面主体
+                2. 背景环境
+                3. 颜色与氛围
+                4. 可见细节
+                要求不要编造图片中不存在的内容。
+                """.trimIndent()
+
+            ImageDescriptionStyle.SocialCaption ->
+                """
+                请根据图片内容生成适合社交平台发布的中文内容。
+                输出包括：
+                1. 画面简述
+                2. 一段自然的社交配文
+                3. 3 到 5 个标签
+                要求表达自然，不要像广告。
+                """.trimIndent()
+
+            ImageDescriptionStyle.ProductCopy ->
+                """
+                请根据图片内容生成偏商品或宣传用途的中文文案。
+                输出包括：
+                1. 可能的商品/主体
+                2. 卖点表达
+                3. 使用场景
+                4. 短文案
+                要求不要编造具体品牌、价格、参数或功效。
+                如果图片中无法判断商品，不要强行编造，应提示“更适合普通图片描述”。
+                """.trimIndent()
+        }
     }
 
     private fun messageForStatus(code: Int): String {
@@ -245,15 +288,5 @@ class RealModelClient(
         const val MAX_IMAGE_BYTES = 4 * 1024 * 1024
         const val SYSTEM_PROMPT =
             "你是中文内容创作助手。输出要自然、具体、克制，尽量可以直接使用。"
-        const val IMAGE_PROMPT =
-            """
-            请根据图片内容生成中文内容。
-            输出包括：
-            1. 画面主体
-            2. 背景与氛围
-            3. 适合社交平台发布的配文
-            4. 可能的标签
-            要求不要编造人物身份、品牌或图片中不存在的内容。
-            """
     }
 }

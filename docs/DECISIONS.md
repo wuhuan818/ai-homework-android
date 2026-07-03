@@ -59,3 +59,13 @@
 - Improve prompts before adding more features because better structured outputs make the existing three scenarios easier to demonstrate.
 - Do not add configuration presets in this stage because provider-specific defaults would expand the settings surface and increase test risk.
 - Do not add multi-model comparison in this stage because the app needs a stable single configured endpoint for demonstration, not a broader benchmarking tool.
+
+## 2026-07-03 - Stage 7 Profile Presets And Image Description Styles
+
+- Add 3 lightweight interface configuration presets because demos often need a primary endpoint plus backup endpoints, but the app still only calls the currently enabled profile.
+- Keep presets out of model comparison scope: no scoring, no speed testing, no ranking, and no side-by-side results.
+- Store each profile's display name, Base URL, text model, vision model, and key status in settings, while keeping the full API Key out of the plaintext `AppSettings` object.
+- Reuse Android Keystore backed AES-GCM for profile API Keys, with a separate ciphertext and IV per profile.
+- Add image description style selection because the same image can reasonably need an objective description, a social caption, or product-oriented copy in a contest demo.
+- Keep generation as a single request and single result display because it protects the existing Mock / Real flow and avoids turning style selection into a benchmarking feature.
+- Current limitation: backup profiles ship with empty endpoint/model fields and must be filled by the user before Real mode can use them.

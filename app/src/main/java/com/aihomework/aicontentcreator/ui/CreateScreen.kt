@@ -36,6 +36,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import com.aihomework.aicontentcreator.data.model.CreationScenario
+import com.aihomework.aicontentcreator.data.model.ImageDescriptionStyle
 import com.aihomework.aicontentcreator.data.settings.ModelMode
 import com.aihomework.aicontentcreator.ui.state.CreateUiState
 
@@ -45,6 +46,7 @@ fun CreateScreen(
     modelMode: ModelMode,
     hasApiKey: Boolean,
     onScenarioSelected: (CreationScenario) -> Unit,
+    onImageDescriptionStyleSelected: (ImageDescriptionStyle) -> Unit,
     onInputChanged: (String) -> Unit,
     onUseMockImage: () -> Unit,
     onChooseImage: () -> Unit,
@@ -98,6 +100,16 @@ fun CreateScreen(
         if (state.selectedScenario == CreationScenario.ImageDescription) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("图片基础处理", style = MaterialTheme.typography.titleMedium)
+                Text("当前描述风格：${state.imageDescriptionStyle.displayName}")
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    ImageDescriptionStyle.entries.forEach { style ->
+                        FilterChip(
+                            selected = state.imageDescriptionStyle == style,
+                            onClick = { onImageDescriptionStyleSelected(style) },
+                            label = { Text(style.displayName) }
+                        )
+                    }
+                }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedButton(onClick = onChooseImage) {
                         Text("选择图片")
