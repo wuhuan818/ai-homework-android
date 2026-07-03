@@ -103,3 +103,28 @@ AI risk notes:
 - Photo Picker Uri read access can vary by device/provider, so real-device testing is required.
 - FileProvider authorities and cache paths must remain aligned or image sharing will fail.
 - Processed images are temporary cache files and should not be treated as permanent gallery items.
+
+## 2026-07-03 - Stage 6 UI And Prompt Polish
+
+Codex generated or modified:
+
+- Chinese user-facing copy across Create, Edit, History, Settings, Share, error prompts, and status prompts.
+- Create screen mode notice for demo mode, real model mode, and missing model key state.
+- Generation button text that changes between demo generation and real model generation.
+- Real model prompts for Moments, Product, and Image Description scenarios.
+- Mock output templates that clearly mark `【演示模式生成】`.
+- README, decision notes, and evidence plan for the UI / Prompt polish stage.
+
+Human verification points:
+
+- Check the app on a real device for any remaining mixed Chinese / English UI wording.
+- Confirm Real mode output is more specific and follows the requested structure.
+- Confirm Mock mode still works offline and cannot be mistaken for a real model response.
+- Confirm processed images are used for image description after rotation or watermark.
+- Re-test sharing, encrypted history, API Key storage, and image processing.
+
+AI risk notes:
+
+- Prompt improvements can guide output structure but cannot guarantee every provider will follow format perfectly.
+- UI wording should be reviewed on device because button width and line wrapping may differ from desktop code review.
+- Real model behavior depends on the configured endpoint and model capability.

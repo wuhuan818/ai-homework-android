@@ -33,13 +33,13 @@ fun HistoryScreen(
         modifier = Modifier.padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text("History and Favorites", style = MaterialTheme.typography.headlineSmall)
+        Text("历史作品", style = MaterialTheme.typography.headlineSmall)
         StorageStatusBlock(state.storageStatus)
         if (state.items.isEmpty()) {
-            Text("No history yet. Generate content from the Create page first.")
+            Text("暂无历史作品，请先在创作页生成内容。")
         } else {
             Button(onClick = onClearHistory) {
-                Text("Clear history")
+                Text("清空历史")
             }
             LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 items(state.items, key = { it.id }) { item ->
@@ -61,10 +61,10 @@ private fun StorageStatusBlock(storageStatus: String) {
             modifier = Modifier.padding(14.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            Text("Storage status", style = MaterialTheme.typography.titleMedium)
-            Text("History records: locally saved when generated or updated")
-            Text("Method: Android Keystore + AES-GCM")
-            Text("Plaintext: generated content is not written directly to local files")
+            Text("本地存储状态", style = MaterialTheme.typography.titleMedium)
+            Text("历史记录：已本地保存")
+            Text("加密方式：Android Keystore + AES-GCM")
+            Text("明文保护：生成内容不会直接写入本地文件")
             Text(storageStatus)
         }
     }
@@ -87,12 +87,12 @@ private fun HistoryCard(
         ) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(item.scenario.displayName, style = MaterialTheme.typography.titleMedium)
-                Text(if (item.isFavorite) "Favorited" else "Not favorited")
+                Text(if (item.isFavorite) "已收藏" else "未收藏")
             }
             Text(formatTime(item.createdAtMillis), style = MaterialTheme.typography.bodySmall)
             Text(item.summary)
             OutlinedButton(onClick = onToggleFavorite) {
-                Text(if (item.isFavorite) "Unfavorite" else "Favorite")
+                Text(if (item.isFavorite) "取消收藏" else "收藏")
             }
         }
     }

@@ -10,6 +10,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -57,80 +58,109 @@ fun SettingsScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        Text("Settings", style = MaterialTheme.typography.headlineSmall)
+        Text("设置", style = MaterialTheme.typography.headlineSmall)
 
-        Text("Model mode", style = MaterialTheme.typography.titleMedium)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            FilterChip(
-                selected = settings.mode == ModelMode.Mock,
-                onClick = { onModeChanged(ModelMode.Mock) },
-                label = { Text("Mock") }
-            )
-            FilterChip(
-                selected = settings.mode == ModelMode.Real,
-                onClick = { onModeChanged(ModelMode.Real) },
-                label = { Text("Real") }
-            )
-        }
-
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth(),
-            value = apiKeyInput,
-            onValueChange = onApiKeyInputChanged,
-            label = { Text("API Key") },
-            visualTransformation = PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(
-                capitalization = KeyboardCapitalization.None,
-                keyboardType = KeyboardType.Password
-            ),
-            singleLine = true
-        )
-        Text(
-            text = if (settings.hasApiKey) "API Key status: configured (hidden)" else "API Key status: not configured",
-            style = MaterialTheme.typography.bodyMedium
-        )
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(onClick = onSaveApiKey) {
-                Text("Save API Key")
-            }
-            OutlinedButton(onClick = onClearApiKey) {
-                Text("Clear API Key")
+        SettingsSection(title = "模型模式") {
+            Text("当前模式：${settings.mode.displayText()}")
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FilterChip(
+                    selected = settings.mode == ModelMode.Mock,
+                    onClick = { onModeChanged(ModelMode.Mock) },
+                    label = { Text("演示模式") }
+                )
+                FilterChip(
+                    selected = settings.mode == ModelMode.Real,
+                    onClick = { onModeChanged(ModelMode.Real) },
+                    label = { Text("真实模型模式") }
+                )
             }
         }
 
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth(),
-            value = settings.baseUrl,
-            onValueChange = onBaseUrlChanged,
-            label = { Text("Base URL") },
-            singleLine = true
-        )
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth(),
-            value = settings.textModel,
-            onValueChange = onTextModelChanged,
-            label = { Text("Text Model") },
-            singleLine = true
-        )
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth(),
-            value = settings.visionModel,
-            onValueChange = onVisionModelChanged,
-            label = { Text("Vision Model") },
-            singleLine = true
-        )
+        SettingsSection(title = "接口配置") {
+            OutlinedTextField(
+                modifier = Modifier.fillMaxWidth(),
+                value = settings.baseUrl,
+                onValueChange = onBaseUrlChanged,
+                label = { Text("接口地址（Base URL）") },
+                singleLine = true
+            )
+            OutlinedTextField(
+                modifier = Modifier.fillMaxWidth(),
+                value = settings.textModel,
+                onValueChange = onTextModelChanged,
+                label = { Text("文本模型（Text Model）") },
+                singleLine = true
+            )
+            OutlinedTextField(
+                modifier = Modifier.fillMaxWidth(),
+                value = settings.visionModel,
+                onValueChange = onVisionModelChanged,
+                label = { Text("图像模型（Vision Model）") },
+                singleLine = true
+            )
+            Button(
+                onClick = onSaveSettings,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("保存接口配置")
+            }
+        }
 
-        Button(
-            onClick = onSaveSettings,
-            modifier = Modifier.fillMaxWidth()
+        SettingsSection(title = "模型密钥") {
+            OutlinedTextField(
+                modifier = Modifier.fillMaxWidth(),
+                value = apiKeyInput,
+                onValueChange = onApiKeyInputChanged,
+                label = { Text("模型密钥（API Key）") },
+                visualTransformation = PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(
+                    capitalization = KeyboardCapitalization.None,
+                    keyboardType = KeyboardType.Password
+                ),
+                singleLine = true
+            )
+            Text(
+                text = if (settings.hasApiKey) "模型密钥状态：已配置" else "模型密钥状态：未配置",
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(onClick = onSaveApiKey) {
+                    Text("保存密钥")
+                }
+                OutlinedButton(onClick = onClearApiKey) {
+                    Text("清除密钥")
+                }
+            }
+        }
+
+        SettingsSection(title = "安全与存储") {
+            Text("存储方式：Android Keystore 加密保存")
+            Text("历史记录：AES-GCM 本地加密")
+            Text("密钥显示：仅显示已配置 / 未配置，不展示完整密钥")
+            Text(historyStorageStatus)
+        }
+    }
+}
+
+@Composable
+private fun SettingsSection(
+    title: String,
+    content: @Composable () -> Unit
+) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Text("Save Settings")
+            Text(title, style = MaterialTheme.typography.titleMedium)
+            content()
         }
+    }
+}
 
-        Text("Storage: ${settings.keyStorageDescription}")
-        Text("History storage: $historyStorageStatus")
-        Text("History encryption: Android Keystore + AES-GCM")
-        Text("Security note: real API Keys are hidden and are not written to logs.")
-        Text("Real mode uses one OpenAI-compatible Chat Completions endpoint.")
+private fun ModelMode.displayText(): String {
+    return when (this) {
+        ModelMode.Mock -> "演示模式"
+        ModelMode.Real -> "真实模型模式"
     }
 }

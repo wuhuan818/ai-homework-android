@@ -32,11 +32,9 @@ import com.aihomework.aicontentcreator.data.history.HistoryStorageStatus
 import com.aihomework.aicontentcreator.data.image.ImageProcessor
 import com.aihomework.aicontentcreator.data.model.CreationRequest
 import com.aihomework.aicontentcreator.data.model.CreationResult
-import com.aihomework.aicontentcreator.data.model.CreationScenario
 import com.aihomework.aicontentcreator.data.model.HistoryItem
 import com.aihomework.aicontentcreator.data.repository.CreationRepository
 import com.aihomework.aicontentcreator.data.repository.HistoryRepository
-import com.aihomework.aicontentcreator.data.settings.AppSettings
 import com.aihomework.aicontentcreator.data.settings.ModelMode
 import com.aihomework.aicontentcreator.data.settings.SettingsRepository
 import com.aihomework.aicontentcreator.ui.CreateScreen
@@ -61,11 +59,11 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-private enum class AppTab(val title: String) {
-    Create("Create"),
-    Edit("Edit"),
-    History("History"),
-    Settings("Settings")
+private enum class AppTab(val title: String, val shortTitle: String) {
+    Create("创作", "创"),
+    Edit("编辑", "编"),
+    History("历史", "史"),
+    Settings("设置", "设")
 }
 
 @Composable
@@ -90,14 +88,14 @@ private fun AIContentCreatorApp() {
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri ->
         if (uri == null) {
-            createState = createState.copy(message = "Image selection was cancelled.")
+            createState = createState.copy(message = "已取消选择图片。")
         } else {
             createState = createState.copy(
                 selectedImageUri = uri.toString(),
                 processedImageUri = null,
-                imageProcessingMessage = "已选择图片，可以旋转或添加文字水印。",
-                input = createState.input.ifBlank { "Selected image" },
-                message = "Image selected."
+                imageProcessingMessage = "已选择图片，可继续旋转或添加文字水印。",
+                input = createState.input.ifBlank { "已选择图片" },
+                message = "图片已选择。"
             )
         }
     }
@@ -112,7 +110,7 @@ private fun AIContentCreatorApp() {
                                 selected = selectedTab == tab,
                                 onClick = { selectedTab = tab },
                                 label = { Text(tab.title) },
-                                icon = { Text(tab.title.first().toString()) }
+                                icon = { Text(tab.shortTitle) }
                             )
                         }
                     }
@@ -122,6 +120,8 @@ private fun AIContentCreatorApp() {
                     when (selectedTab) {
                         AppTab.Create -> CreateScreen(
                             state = createState,
+                            modelMode = settings.mode,
+                            hasApiKey = settings.hasApiKey,
                             onScenarioSelected = { scenario ->
                                 createState = createState.copy(
                                     selectedScenario = scenario,
@@ -136,10 +136,10 @@ private fun AIContentCreatorApp() {
                             onInputChanged = { createState = createState.copy(input = it) },
                             onUseMockImage = {
                                 createState = createState.copy(
-                                    input = "Mock image: city street at night with bright signs",
+                                    input = "示例图片：夜晚城市街道和明亮招牌",
                                     selectedImageUri = null,
                                     processedImageUri = null,
-                                    imageProcessingMessage = null
+                                    imageProcessingMessage = "已使用示例图片线索，不会上传真实图片。"
                                 )
                             },
                             onChooseImage = {
@@ -150,7 +150,7 @@ private fun AIContentCreatorApp() {
                             onRotateImage = {
                                 val sourceUri = createState.processedImageUri ?: createState.selectedImageUri
                                 if (sourceUri == null) {
-                                    createState = createState.copy(message = "请先选择图片")
+                                    createState = createState.copy(message = "请先选择图片。")
                                     return@CreateScreen
                                 }
                                 scope.launch {
@@ -165,7 +165,7 @@ private fun AIContentCreatorApp() {
                                         createState.copy(
                                             processedImageUri = result.uri.toString(),
                                             isImageProcessing = false,
-                                            imageProcessingMessage = "图片已旋转 90 度。"
+                                            imageProcessingMessage = "图片已旋转 90°。"
                                         )
                                     } else {
                                         createState.copy(
@@ -182,7 +182,7 @@ private fun AIContentCreatorApp() {
                             onAddWatermark = {
                                 val sourceUri = createState.processedImageUri ?: createState.selectedImageUri
                                 if (sourceUri == null) {
-                                    createState = createState.copy(message = "请先选择图片")
+                                    createState = createState.copy(message = "请先选择图片。")
                                     return@CreateScreen
                                 }
                                 scope.launch {
@@ -211,16 +211,17 @@ private fun AIContentCreatorApp() {
                             onShareProcessedImage = {
                                 val processedImageUri = createState.processedImageUri
                                 if (processedImageUri == null) {
-                                    createState = createState.copy(message = "请先旋转或添加水印")
+                                    createState = createState.copy(message = "请先旋转图片或添加水印。")
                                 } else {
                                     shareImage(context, processedImageUri)
                                 }
                             },
                             onGenerate = {
                                 val input = createState.input.trim()
-                                val hasImage = createState.selectedImageUri != null
+                                val imageUri = createState.processedImageUri ?: createState.selectedImageUri
+                                val hasImage = imageUri != null
                                 if (input.isBlank() && !hasImage) {
-                                    createState = createState.copy(message = "Please enter content or choose an image first.")
+                                    createState = createState.copy(message = "请先输入内容或选择图片。")
                                     return@CreateScreen
                                 }
                                 scope.launch {
@@ -237,8 +238,8 @@ private fun AIContentCreatorApp() {
                                             CreationRequest(
                                                 scenario = createState.selectedScenario,
                                                 input = input,
-                                                imageLabel = if (hasImage) "Selected image" else null,
-                                                imageUri = createState.selectedImageUri
+                                                imageLabel = if (hasImage) "已选择图片" else null,
+                                                imageUri = imageUri
                                             )
                                         )
                                         historyRepository.addResult(result)
@@ -252,7 +253,7 @@ private fun AIContentCreatorApp() {
                                     } catch (error: Exception) {
                                         createState = createState.copy(
                                             isLoading = false,
-                                            message = "Generation failed. Please try again."
+                                            message = "生成失败，请稍后重试。"
                                         )
                                     }
                                 }
@@ -260,7 +261,7 @@ private fun AIContentCreatorApp() {
                             onEdit = {
                                 val result = createState.result
                                 if (result == null) {
-                                    createState = createState.copy(message = "No editable content yet.")
+                                    createState = createState.copy(message = "暂无可编辑内容。")
                                 } else {
                                     editState = result.toEditState()
                                     selectedTab = AppTab.Edit
@@ -269,16 +270,16 @@ private fun AIContentCreatorApp() {
                             onFavorite = {
                                 val result = createState.result
                                 if (result == null) {
-                                    createState = createState.copy(message = "No content to favorite yet.")
+                                    createState = createState.copy(message = "暂无可收藏内容。")
                                 } else {
                                     historyRepository.toggleFavorite(result.id)
-                                    createState = createState.copy(message = "Favorite status updated.")
+                                    createState = createState.copy(message = "收藏状态已更新。")
                                 }
                             },
                             onShare = {
                                 val text = createState.result?.content.orEmpty()
                                 if (text.isBlank()) {
-                                    createState = createState.copy(message = "No content to share yet.")
+                                    createState = createState.copy(message = "暂无可分享内容。")
                                 } else {
                                     shareText(context, text)
                                 }
@@ -294,37 +295,37 @@ private fun AIContentCreatorApp() {
                             onSave = {
                                 val id = editState.itemId
                                 if (id == null || editState.text.isBlank()) {
-                                    editState = editState.copy(message = "No content to save.")
+                                    editState = editState.copy(message = "暂无可保存内容。")
                                 } else {
                                     historyRepository.updateContent(id, editState.text)
                                     createState = createState.updateResultText(id, editState.text)
-                                    editState = editState.copy(message = "Changes saved.")
+                                    editState = editState.copy(message = "修改已保存。")
                                     selectedTab = AppTab.Create
                                 }
                             },
                             onConvertMarkdown = {
                                 if (editState.text.isBlank()) {
-                                    editState = editState.copy(message = "No content to convert.")
+                                    editState = editState.copy(message = "暂无可转换内容。")
                                 } else {
                                     editState = editState.copy(
                                         text = toMarkdown(editState),
-                                        message = "Converted to Markdown."
+                                        message = "已转换为 Markdown。"
                                     )
                                 }
                             },
                             onConvertPlainText = {
                                 if (editState.text.isBlank()) {
-                                    editState = editState.copy(message = "No content to convert.")
+                                    editState = editState.copy(message = "暂无可转换内容。")
                                 } else {
                                     editState = editState.copy(
                                         text = toPlainText(editState.text),
-                                        message = "Converted to plain text."
+                                        message = "已转换为纯文本。"
                                     )
                                 }
                             },
                             onShare = {
                                 if (editState.text.isBlank()) {
-                                    Toast.makeText(context, "No content to share yet.", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, "暂无可分享内容。", Toast.LENGTH_SHORT).show()
                                 } else {
                                     shareText(context, editState.text)
                                 }
@@ -368,22 +369,22 @@ private fun AIContentCreatorApp() {
                             onSaveSettings = {
                                 settingsRepository.saveSettings(settings)
                                 settings = settingsRepository.loadSettings()
-                                settingsMessage = "Settings saved."
+                                settingsMessage = "设置已保存。"
                             },
                             onSaveApiKey = {
                                 if (settingsRepository.saveApiKey(apiKeyInput)) {
                                     apiKeyInput = ""
                                     settings = settingsRepository.loadSettings()
-                                    settingsMessage = "API Key saved securely."
+                                    settingsMessage = "模型密钥已加密保存。"
                                 } else {
-                                    settingsMessage = "Enter an API Key before saving."
+                                    settingsMessage = "请输入模型密钥后再保存。"
                                 }
                             },
                             onClearApiKey = {
                                 settingsRepository.clearApiKey()
                                 apiKeyInput = ""
                                 settings = settingsRepository.loadSettings()
-                                settingsMessage = "API Key cleared."
+                                settingsMessage = "模型密钥已清除。"
                             },
                             onMessageShown = {
                                 settingsMessage = null
@@ -419,7 +420,7 @@ private fun CreateUiState.updateResultText(id: Long, text: String): CreateUiStat
 }
 
 private fun toMarkdown(state: EditUiState): String {
-    val title = state.scenario?.displayName ?: "AI creation result"
+    val title = state.scenario?.displayName ?: "创作结果"
     val body = state.text
         .lines()
         .map { it.trim() }
@@ -439,9 +440,9 @@ private fun toPlainText(text: String): String {
 
 private fun HistoryStorageStatus.toDisplayText(): String {
     return when (this) {
-        HistoryStorageStatus.NotInitialized -> "not initialized"
-        HistoryStorageStatus.Encrypted -> "encrypted"
-        HistoryStorageStatus.LoadFailed -> "load failed"
-        HistoryStorageStatus.SaveFailed -> "save failed"
+        HistoryStorageStatus.NotInitialized -> "历史记录：尚未初始化"
+        HistoryStorageStatus.Encrypted -> "历史记录：已本地加密保存"
+        HistoryStorageStatus.LoadFailed -> "历史记录：读取失败"
+        HistoryStorageStatus.SaveFailed -> "历史记录：保存失败"
     }
 }

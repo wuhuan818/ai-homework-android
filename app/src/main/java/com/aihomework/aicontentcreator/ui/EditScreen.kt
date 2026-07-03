@@ -45,14 +45,14 @@ fun EditScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Text("编辑页", style = MaterialTheme.typography.headlineSmall)
+        Text("编辑作品", style = MaterialTheme.typography.headlineSmall)
         Text(state.scenario?.displayName ?: "暂无可编辑内容")
 
         OutlinedTextField(
             modifier = Modifier.fillMaxWidth(),
             value = state.text,
             onValueChange = onTextChanged,
-            label = { Text("编辑生成结果") },
+            label = { Text("编辑创作结果") },
             minLines = 8
         )
 
@@ -67,12 +67,11 @@ fun EditScreen(
 
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedButton(onClick = onConvertMarkdown) {
-                Text("转 Markdown")
+                Text("转为 Markdown")
             }
             OutlinedButton(onClick = onConvertPlainText) {
-                Text("转纯文本")
+                Text("转为纯文本")
             }
         }
     }
 }
-

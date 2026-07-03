@@ -78,9 +78,9 @@ If `run-as` is not available for the installed build, use Android Studio Device 
 Capture these screenshots or short recordings:
 
 1. Image description scenario after a device image is selected successfully.
-2. Image preview/status before rotation and after tapping `Rotate 90`.
-3. Text watermark input plus the processed image/status after tapping `Add watermark`.
-4. Android system share sheet opened from `Share image` for the processed image.
+2. Image preview/status before rotation and after tapping `旋转 90°`.
+3. Text watermark input plus the processed image/status after tapping `添加水印`.
+4. Android system share sheet opened from `分享图片` for the processed image.
 5. User-readable failure prompt when tapping rotate or watermark before selecting an image, expected text: `请先选择图片`.
 6. Successful `assembleDebug` output.
 7. Successful `adb install -r app\build\outputs\apk\debug\app-debug.apk` output on a real device.
@@ -89,3 +89,21 @@ Notes:
 
 - The processed image is saved under the app cache for sharing evidence and is not expected to appear in the gallery.
 - No broad storage permission should appear in the app permission list.
+
+## Stage 6 UI And Prompt Polish Evidence
+
+Capture these screenshots or short recordings:
+
+1. 中文化后的创作页。
+2. 创作页顶部模式提示条。
+3. 真实模型模式下的朋友圈文案结果。
+4. 商品描述结构化结果。
+5. 图片描述结构化结果。
+6. 设置页的安全与存储说明。
+7. 历史页的本地加密说明。
+
+Additional checks:
+
+- Verify demo mode output includes `【演示模式生成】`.
+- Verify Real mode with no model key shows `尚未配置模型密钥，请前往设置页配置。`.
+- Verify processed image description uses the rotated or watermarked image when available.

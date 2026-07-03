@@ -50,3 +50,12 @@
 - Use Android native `ImageDecoder` on Android 9+ for better Photo Picker Uri compatibility, with `BitmapFactory` kept as the older-version fallback.
 - Share processed images through a scoped `FileProvider` that exposes only the `cache/shared_images` directory.
 - Current limitation: very large images are downsampled for processing, and future work can add stronger memory handling only if real-device evidence shows a need.
+
+## 2026-07-03 - Stage 6 UI And Prompt Polish
+
+- Prioritize UI wording and Prompt quality because the core app flow is already usable, and the next risk for a contest demo is whether judges can understand what each page is doing.
+- Keep Mock / Real boundaries clear so users do not confuse local template output with real model output. Mock output now explicitly marks itself as `【演示模式生成】`, while Real mode explains that configured model endpoints will be called.
+- Keep API Key visibility limited to configured / not configured status. The UI should never show the full key.
+- Improve prompts before adding more features because better structured outputs make the existing three scenarios easier to demonstrate.
+- Do not add configuration presets in this stage because provider-specific defaults would expand the settings surface and increase test risk.
+- Do not add multi-model comparison in this stage because the app needs a stable single configured endpoint for demonstration, not a broader benchmarking tool.

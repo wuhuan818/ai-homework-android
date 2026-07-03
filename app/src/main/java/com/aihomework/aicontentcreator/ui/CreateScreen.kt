@@ -36,11 +36,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import com.aihomework.aicontentcreator.data.model.CreationScenario
+import com.aihomework.aicontentcreator.data.settings.ModelMode
 import com.aihomework.aicontentcreator.ui.state.CreateUiState
 
 @Composable
 fun CreateScreen(
     state: CreateUiState,
+    modelMode: ModelMode,
+    hasApiKey: Boolean,
     onScenarioSelected: (CreationScenario) -> Unit,
     onInputChanged: (String) -> Unit,
     onUseMockImage: () -> Unit,
@@ -70,9 +73,11 @@ fun CreateScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Text("AIContentCreator", style = MaterialTheme.typography.headlineSmall)
-        Text("选择场景，输入主题，用 MockModelClient 生成可演示内容。")
+        Text("AI 内容创作助手", style = MaterialTheme.typography.headlineSmall)
+        Text("支持文案生成、图片描述、编辑收藏与本地加密保存。")
+        ModeNotice(modelMode = modelMode, hasApiKey = hasApiKey)
 
+        Text("创作场景", style = MaterialTheme.typography.titleMedium)
         CreationScenario.entries.forEach { scenario ->
             ScenarioCard(
                 scenario = scenario,
@@ -92,12 +97,13 @@ fun CreateScreen(
 
         if (state.selectedScenario == CreationScenario.ImageDescription) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("图片基础处理", style = MaterialTheme.typography.titleMedium)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedButton(onClick = onChooseImage) {
-                        Text("Choose image")
+                        Text("选择图片")
                     }
                     OutlinedButton(onClick = onUseMockImage) {
-                        Text("Use Mock image")
+                        Text("使用示例图片")
                     }
                 }
 
@@ -105,7 +111,7 @@ fun CreateScreen(
                 val imageStatus = when {
                     state.processedImageUri != null -> "处理后的图片已生成，可继续处理或分享。"
                     state.selectedImageUri != null -> "已选择图片，可旋转或添加文字水印。"
-                    else -> "No image selected."
+                    else -> "尚未选择图片。"
                 }
                 Text(imageStatus)
                 ImagePreview(uriText = previewUri)
@@ -117,13 +123,13 @@ fun CreateScreen(
                         onClick = onRotateImage,
                         enabled = !state.isImageProcessing
                     ) {
-                        Text("Rotate 90")
+                        Text("旋转 90°")
                     }
                     OutlinedButton(
                         onClick = onShareProcessedImage,
                         enabled = !state.isImageProcessing
                     ) {
-                        Text("Share image")
+                        Text("分享图片")
                     }
                     if (state.isImageProcessing) {
                         CircularProgressIndicator(modifier = Modifier.size(24.dp))
@@ -134,14 +140,14 @@ fun CreateScreen(
                     modifier = Modifier.fillMaxWidth(),
                     value = state.watermarkText,
                     onValueChange = onWatermarkTextChanged,
-                    label = { Text("Watermark text") },
+                    label = { Text("水印文字") },
                     singleLine = true
                 )
                 OutlinedButton(
                     onClick = onAddWatermark,
                     enabled = !state.isImageProcessing
                 ) {
-                    Text("Add watermark")
+                    Text("添加水印")
                 }
             }
         }
@@ -154,7 +160,7 @@ fun CreateScreen(
             if (state.isLoading) {
                 CircularProgressIndicator()
             } else {
-                Text("生成 Mock 内容")
+                Text(if (modelMode == ModelMode.Mock) "生成演示内容" else "调用模型生成")
             }
         }
 
@@ -164,7 +170,8 @@ fun CreateScreen(
                     modifier = Modifier.padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Text(result.scenario.displayName, style = MaterialTheme.typography.titleMedium)
+                    Text("创作结果", style = MaterialTheme.typography.titleMedium)
+                    Text(result.scenario.displayName, style = MaterialTheme.typography.bodyMedium)
                     Text(result.content)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Button(onClick = onEdit) {
@@ -180,6 +187,22 @@ fun CreateScreen(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun ModeNotice(modelMode: ModelMode, hasApiKey: Boolean) {
+    val notice = when {
+        modelMode == ModelMode.Mock -> "当前为演示模式：使用本地模板生成，不上传内容。"
+        !hasApiKey -> "尚未配置模型密钥，请前往设置页配置。"
+        else -> "当前为真实模型模式：将调用你配置的大模型接口。"
+    }
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = notice,
+            modifier = Modifier.padding(12.dp),
+            style = MaterialTheme.typography.bodyMedium
+        )
     }
 }
 
@@ -212,7 +235,7 @@ private fun ImagePreview(uriText: String?) {
     bitmap?.let {
         Image(
             bitmap = it.asImageBitmap(),
-            contentDescription = "Image preview",
+            contentDescription = "图片预览",
             modifier = Modifier
                 .fillMaxWidth()
                 .height(180.dp),

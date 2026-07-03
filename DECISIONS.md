@@ -29,3 +29,9 @@
 - Use Android Keystore backed AES-GCM and SharedPreferences ciphertext/IV fields for the stage 4 encrypted storage requirement.
 - Keep the implementation as an encrypted JSON blob instead of adding Room or SQLCipher in this stage.
 - Defer database-backed history until the app needs search, paging, migrations, or larger structured history data.
+
+## Stage 6 UI And Prompt Polish
+
+- Improve Chinese UI wording and Prompt quality before adding more features because the app is now functionally usable and needs to be clear for contest demonstration.
+- Keep demo mode and real model mode visibly distinct so local template output is not mistaken for a real model response.
+- Do not add configuration presets or multi-model comparison in this stage because they would expand scope beyond polishing the existing demo-ready flow.
