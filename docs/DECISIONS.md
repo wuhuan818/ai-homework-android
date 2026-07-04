@@ -144,3 +144,12 @@
 - Continue to defer freehand drawing and complex filter collections because they would expand the UI and testing surface beyond a V1 polish pass.
 - Continue to defer gesture crop because center crop gives a low-risk crop path now while preserving room for a future manual selection interaction.
 - Weaken user-visible Mock wording to “演示模式” because it explains the local-generation behavior without exposing implementation language; technical docs can still mention Mock where useful.
+
+## 2026-07-04 - Stage 14.2 Creation UI Polish
+
+- Prioritize Create screen layout and button density because the app already has the main V1 functions, and the next visible risk is crowded controls, awkward Chinese wrapping, and unclear task hierarchy.
+- Split “帮我推荐风格” from “生成 3 个版本” because recommendation is an action while multi-version is a setting; separating them keeps the style area readable on narrow screens and preserves both existing logic paths.
+- Add image prompt optimization instead of advanced image parameters because users need help turning simple descriptions into usable image prompts, while seed, steps, cfg, and sampler would expand configuration complexity beyond this stage.
+- Let text results become image prompts because generated copy often contains enough scene or product context to start a companion image, and the handoff keeps user control by not auto-generating images.
+- Keep center crop as the existing automatic center-crop action because it is already buildable and useful, while deeper crop work would compete with the higher-priority creation-page layout fixes.
+- Defer gesture crop to a later stage because manual selection needs new interaction design, preview behavior, and real-device validation that are outside this 14-2 pass.

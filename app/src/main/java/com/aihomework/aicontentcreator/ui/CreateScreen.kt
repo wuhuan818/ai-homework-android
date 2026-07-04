@@ -8,6 +8,7 @@ import android.net.Uri
 import android.os.Build
 import android.widget.Toast
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -22,6 +23,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
@@ -29,10 +31,12 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -69,8 +73,13 @@ fun CreateScreen(
     onAddWatermark: () -> Unit,
     onRestoreOriginalImage: () -> Unit,
     onShareProcessedImage: () -> Unit,
+    onOptimizeImagePrompt: () -> Unit,
+    onApplyOptimizedImagePrompt: () -> Unit,
+    onKeepOriginalImagePrompt: () -> Unit,
+    onImagePromptExampleSelected: (String) -> Unit,
     onGenerate: () -> Unit,
     onEdit: () -> Unit,
+    onUseResultForImagePrompt: () -> Unit,
     onFavorite: () -> Unit,
     onShare: () -> Unit,
     onSaveImage: () -> Unit,
@@ -101,7 +110,8 @@ fun CreateScreen(
             scenario = state.selectedScenario
         )
 
-        ImageSection(title = "创作入口") {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("创作入口", style = MaterialTheme.typography.titleMedium)
             CreationScenario.entries.forEach { scenario ->
                 ScenarioCard(
                     scenario = scenario,
@@ -118,6 +128,10 @@ fun CreateScreen(
                 ImageGenerationOptions(
                     state = state,
                     onInputChanged = onInputChanged,
+                    onOptimizeImagePrompt = onOptimizeImagePrompt,
+                    onApplyOptimizedImagePrompt = onApplyOptimizedImagePrompt,
+                    onKeepOriginalImagePrompt = onKeepOriginalImagePrompt,
+                    onImagePromptExampleSelected = onImagePromptExampleSelected,
                     onImageGenerationStyleSelected = onImageGenerationStyleSelected,
                     onImageAspectRatioSelected = onImageAspectRatioSelected
                 )
@@ -203,7 +217,7 @@ fun CreateScreen(
                 ImageSection(title = "图片基础处理") {
                     val hasSelectedImage = state.selectedImageUri != null || state.processedImageUri != null
                     if (!hasSelectedImage) {
-                        Text("选择图片后可进行旋转、水印、滤镜和裁剪。")
+                        Text("选图后可旋转、水印、滤镜和裁剪。")
                     }
                     state.imageProcessingMessage?.let { Text(it) }
 
@@ -227,13 +241,13 @@ fun CreateScreen(
                             ) {
                                 Text("恢复原图")
                             }
-                            OutlinedButton(
-                                modifier = Modifier.weight(1f),
-                                onClick = onShareProcessedImage,
-                                enabled = state.processedImageUri != null && !state.isImageProcessing
-                            ) {
-                                Text("分享")
-                            }
+                        }
+                        OutlinedButton(
+                            modifier = Modifier.fillMaxWidth(),
+                            onClick = onShareProcessedImage,
+                            enabled = state.processedImageUri != null && !state.isImageProcessing
+                        ) {
+                            Text("分享处理后图片")
                         }
                         if (state.isImageProcessing) {
                             CircularProgressIndicator(modifier = Modifier.size(24.dp))
@@ -268,7 +282,7 @@ fun CreateScreen(
                             }
                         }
 
-                        Text("裁剪比例", style = MaterialTheme.typography.titleSmall)
+                        Text("裁剪", style = MaterialTheme.typography.titleSmall)
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -356,11 +370,22 @@ fun CreateScreen(
                     Text(result.scenario.displayName, style = MaterialTheme.typography.bodyMedium)
                     Text(result.content)
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Button(
+                        Row(
                             modifier = Modifier.fillMaxWidth(),
-                            onClick = onEdit
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Text("编辑")
+                            Button(
+                                modifier = Modifier.weight(1f),
+                                onClick = onEdit
+                            ) {
+                                Text("编辑")
+                            }
+                            OutlinedButton(
+                                modifier = Modifier.weight(1f),
+                                onClick = onUseResultForImagePrompt
+                            ) {
+                                Text("生成配图")
+                            }
                         }
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -396,11 +421,15 @@ fun CreateScreen(
 private fun ImageGenerationOptions(
     state: CreateUiState,
     onInputChanged: (String) -> Unit,
+    onOptimizeImagePrompt: () -> Unit,
+    onApplyOptimizedImagePrompt: () -> Unit,
+    onKeepOriginalImagePrompt: () -> Unit,
+    onImagePromptExampleSelected: (String) -> Unit,
     onImageGenerationStyleSelected: (ImageGenerationStyle) -> Unit,
     onImageAspectRatioSelected: (ImageAspectRatio) -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("生成设置", style = MaterialTheme.typography.titleSmall)
+        Text("图片描述", style = MaterialTheme.typography.titleSmall)
         OutlinedTextField(
             modifier = Modifier.fillMaxWidth(),
             value = state.input,
@@ -410,6 +439,65 @@ private fun ImageGenerationOptions(
             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
             minLines = 3
         )
+
+        val examples = listOf(
+            "橘猫坐在窗边看雨，温暖插画风。",
+            "极简风产品海报，一只蓝色保温杯，白色背景。",
+            "傍晚海边散步的人，电影感，柔和光线。"
+        )
+        Text(
+            text = if (state.input.isBlank()) "示例提示词" else "示例提示词（可替换当前输入）",
+            style = MaterialTheme.typography.titleSmall
+        )
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            examples.forEach { example ->
+                OutlinedButton(
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = { onImagePromptExampleSelected(example) }
+                ) {
+                    Text(example, maxLines = 2)
+                }
+            }
+        }
+
+        OutlinedButton(
+            modifier = Modifier.fillMaxWidth(),
+            onClick = onOptimizeImagePrompt,
+            enabled = !state.isOptimizingImagePrompt
+        ) {
+            Text(if (state.isOptimizingImagePrompt) "正在优化提示词..." else "优化提示词")
+        }
+
+        val originalPrompt = state.imagePromptOriginal
+        val optimizedPrompt = state.optimizedImagePrompt
+        if (originalPrompt != null && optimizedPrompt != null) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text("原提示词", style = MaterialTheme.typography.titleSmall)
+                Text(originalPrompt, maxLines = 3)
+                Text("优化后", style = MaterialTheme.typography.titleSmall)
+                Text(optimizedPrompt, maxLines = 4)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        modifier = Modifier.weight(1f),
+                        onClick = onApplyOptimizedImagePrompt
+                    ) {
+                        Text("应用优化提示词")
+                    }
+                    TextButton(
+                        modifier = Modifier.weight(1f),
+                        onClick = onKeepOriginalImagePrompt
+                    ) {
+                        Text("保留原提示词")
+                    }
+                }
+            }
+        }
 
         Text("图片风格", style = MaterialTheme.typography.titleSmall)
         Row(
@@ -494,28 +582,36 @@ private fun TextCreationOptions(
             }
 
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                modifier = Modifier.fillMaxWidth()
             ) {
                 OutlinedButton(
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.fillMaxWidth(),
                     onClick = onSuggestStyle,
                     enabled = !state.isSuggestingStyle
                 ) {
                     Text(if (state.isSuggestingStyle) "正在推荐..." else "帮我推荐风格")
                 }
-                Row(
-                    modifier = Modifier.weight(1f),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text("生成 3 个版本")
-                    Switch(
-                        checked = state.generationCount >= 3,
-                        onCheckedChange = { checked ->
-                            onGenerationCountChanged(if (checked) 3 else 1)
-                        }
+            }
+
+            Text("生成设置", style = MaterialTheme.typography.titleMedium)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("生成 3 个版本", style = MaterialTheme.typography.titleSmall)
+                    Text(
+                        "开启后会生成三个不同表达方向。",
+                        style = MaterialTheme.typography.bodySmall
                     )
                 }
+                Switch(
+                    checked = state.generationCount >= 3,
+                    onCheckedChange = { checked ->
+                        onGenerationCountChanged(if (checked) 3 else 1)
+                    }
+                )
             }
 
             state.styleAdviceMessage?.let { message ->
@@ -562,16 +658,30 @@ private fun ScenarioCard(
     selected: Boolean,
     onClick: () -> Unit
 ) {
-    FilterChip(
-        selected = selected,
-        onClick = onClick,
-        label = {
-            Column {
-                Text(scenario.displayName, style = MaterialTheme.typography.titleSmall)
-                Text(scenario.description, style = MaterialTheme.typography.bodySmall)
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        colors = CardDefaults.cardColors(
+            containerColor = if (selected) {
+                MaterialTheme.colorScheme.primaryContainer
+            } else {
+                MaterialTheme.colorScheme.surfaceVariant
             }
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text(scenario.displayName, style = MaterialTheme.typography.titleSmall)
+            Text(
+                text = scenario.description,
+                style = MaterialTheme.typography.bodySmall,
+                maxLines = 2
+            )
         }
-    )
+    }
 }
 
 @Composable

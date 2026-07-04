@@ -393,3 +393,36 @@ Human verification points:
 - Confirm launcher name and icon on a real device.
 - Manually test Create, Edit, History, image processing, image generation, and Settings paths listed in the Stage 14 checklist.
 - Review the final report and `git diff --stat` before deciding whether to commit.
+
+## 2026-07-04 - Stage 14.2 Creation UI Polish
+
+Human raised:
+
+- UI 中存在孤字换行和排布不美观问题。
+- 创作风格推荐区域中按钮和开关挤在一起。
+- 中心裁剪不再深度优化，因为最终目标是手势框选裁剪。
+- 图片生成区需要更丰富，但不应变成高级参数面板。
+- 本阶段选择优化提示词、示例提示词、文本转配图作为轻量增强。
+- 前端体验判断继续由用户完成。
+
+Codex generated or modified:
+
+- Create screen scene entry cards, text-style setting layout, image generation prompt helpers, and text-result-to-image handoff.
+- Image generation prompt optimization through Mock local rules or the configured Real text model, with a candidate apply/keep flow.
+- Local example image prompts that only fill the input and do not call a model or write history.
+- Image result and image processing control grouping without changing center-crop behavior.
+- Edit page rewrite copy so generated rewrites read as candidates before application.
+
+Human verification points:
+
+- Check whether scene entries are clearer and whether Chinese button text still wraps awkwardly.
+- Check image prompt examples, optimization, apply/keep behavior, and manual image generation.
+- Check text result “生成配图” switches to image generation without auto-calling the model.
+- Check selected-image processing still supports rotation, watermark, black-and-white filter, center crop, restore original, and share.
+- Check edit-page “应用这个版本 / 不使用” copy and existing save behavior.
+
+AI risk notes:
+
+- Real prompt optimization quality depends on the configured text model.
+- Visual layout still needs user real-device judgment, especially small-screen Chinese wrapping.
+- Gesture crop, free crop, crop preview, and drawing remain intentionally unimplemented.

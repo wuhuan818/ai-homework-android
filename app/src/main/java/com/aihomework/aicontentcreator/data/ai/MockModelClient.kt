@@ -72,6 +72,26 @@ class MockModelClient : ModelClient {
         }
     }
 
+    override suspend fun optimizeImagePrompt(input: String): String {
+        delay(450)
+        val cleanInput = input.trim()
+        if (cleanInput.isBlank()) return cleanInput
+        val styleHint = when {
+            containsAny(cleanInput, "商品", "海报", "杯", "包", "耳机", "灯") ->
+                "产品展示风格，干净背景，主体突出，质感清晰"
+
+            containsAny(cleanInput, "海", "傍晚", "电影", "街", "城市", "雨") ->
+                "电影感构图，柔和光线，氛围自然，细节丰富"
+
+            containsAny(cleanInput, "猫", "狗", "孩子", "窗", "家") ->
+                "温暖插画风格，室内柔光，画面柔和，情绪轻松"
+
+            else ->
+                "主体明确，构图清晰，色彩协调，细节丰富"
+        }
+        return "$cleanInput，$styleHint。"
+    }
+
     private fun momentsContent(input: String, style: TextCreationStyle, generationCount: Int): String {
         val versions = if (generationCount >= 3) {
             listOf(

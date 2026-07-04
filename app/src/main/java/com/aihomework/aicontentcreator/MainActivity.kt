@@ -151,6 +151,9 @@ private fun AIContentCreatorApp() {
                                     styleAdvice = emptyList(),
                                     styleAdviceMessage = null,
                                     isSuggestingStyle = false,
+                                    isOptimizingImagePrompt = false,
+                                    imagePromptOriginal = null,
+                                    optimizedImagePrompt = null,
                                     result = null,
                                     message = null
                                 )
@@ -225,7 +228,9 @@ private fun AIContentCreatorApp() {
                             onInputChanged = {
                                 createState = createState.copy(
                                     input = it,
-                                    styleAdviceMessage = null
+                                    styleAdviceMessage = null,
+                                    imagePromptOriginal = null,
+                                    optimizedImagePrompt = null
                                 )
                             },
                             onUseMockImage = {
@@ -417,6 +422,85 @@ private fun AIContentCreatorApp() {
                                     shareImage(context, processedImageUri)
                                 }
                             },
+                            onOptimizeImagePrompt = {
+                                val input = createState.input.trim()
+                                if (input.isBlank()) {
+                                    createState = createState.copy(
+                                        imageUploadNotice = "请先输入图片描述，再优化提示词。",
+                                        message = "请先输入图片描述，再优化提示词。"
+                                    )
+                                    return@CreateScreen
+                                }
+                                scope.launch {
+                                    createState = createState.copy(
+                                        isOptimizingImagePrompt = true,
+                                        imagePromptOriginal = input,
+                                        optimizedImagePrompt = null,
+                                        imageUploadNotice = "正在优化提示词...",
+                                        message = null
+                                    )
+                                    try {
+                                        val client = if (settings.mode == ModelMode.Mock) {
+                                            MockModelClient()
+                                        } else {
+                                            RealModelClient(appContext, settings) {
+                                                settingsRepository.getApiKey(settings.activeProfile.id)
+                                            }
+                                        }
+                                        val optimized = CreationRepository(client).optimizeImagePrompt(input)
+                                        createState = createState.copy(
+                                            isOptimizingImagePrompt = false,
+                                            imagePromptOriginal = input,
+                                            optimizedImagePrompt = optimized,
+                                            imageUploadNotice = "已生成优化提示词，请选择是否应用。"
+                                        )
+                                    } catch (error: ModelClientException) {
+                                        createState = createState.copy(
+                                            isOptimizingImagePrompt = false,
+                                            imagePromptOriginal = null,
+                                            optimizedImagePrompt = null,
+                                            imageUploadNotice = error.userMessage,
+                                            message = error.userMessage
+                                        )
+                                    } catch (error: Exception) {
+                                        createState = createState.copy(
+                                            isOptimizingImagePrompt = false,
+                                            imagePromptOriginal = null,
+                                            optimizedImagePrompt = null,
+                                            imageUploadNotice = "优化提示词失败，请稍后重试。",
+                                            message = "优化提示词失败，请稍后重试。"
+                                        )
+                                    }
+                                }
+                            },
+                            onApplyOptimizedImagePrompt = {
+                                val optimized = createState.optimizedImagePrompt
+                                if (optimized.isNullOrBlank()) {
+                                    createState = createState.copy(message = "暂无可应用的优化提示词。")
+                                } else {
+                                    createState = createState.copy(
+                                        input = optimized,
+                                        imagePromptOriginal = null,
+                                        optimizedImagePrompt = null,
+                                        imageUploadNotice = "已应用优化提示词，请手动生成图片。"
+                                    )
+                                }
+                            },
+                            onKeepOriginalImagePrompt = {
+                                createState = createState.copy(
+                                    imagePromptOriginal = null,
+                                    optimizedImagePrompt = null,
+                                    imageUploadNotice = "已保留原提示词。"
+                                )
+                            },
+                            onImagePromptExampleSelected = { example ->
+                                createState = createState.copy(
+                                    input = example,
+                                    imagePromptOriginal = null,
+                                    optimizedImagePrompt = null,
+                                    imageUploadNotice = "已填入示例提示词，请手动生成图片。"
+                                )
+                            },
                             onGenerate = {
                                 if (createState.selectedScenario == CreationScenario.ImageGeneration) {
                                     val prompt = createState.input.trim()
@@ -538,6 +622,35 @@ private fun AIContentCreatorApp() {
                                 } else {
                                     editState = result.toEditState()
                                     selectedTab = AppTab.Edit
+                                }
+                            },
+                            onUseResultForImagePrompt = {
+                                val result = createState.result
+                                if (result == null || result.contentType == HistoryContentType.IMAGE) {
+                                    createState = createState.copy(message = "暂无可用于生成配图的文本结果。")
+                                } else {
+                                    val imageStyle = when (result.scenario) {
+                                        CreationScenario.Product -> ImageGenerationStyle.ProductDisplay
+                                        CreationScenario.Moments -> ImageGenerationStyle.Illustration
+                                        else -> createState.imageGenerationStyle
+                                    }
+                                    createState = createState.copy(
+                                        selectedScenario = CreationScenario.ImageGeneration,
+                                        input = result.content,
+                                        selectedImageUri = null,
+                                        processedImageUri = null,
+                                        imageProcessingMessage = null,
+                                        imageUploadNotice = "已填入配图提示词，请手动生成图片。",
+                                        imageGenerationStyle = imageStyle,
+                                        imageAspectRatio = ImageAspectRatio.Square,
+                                        styleAdvice = emptyList(),
+                                        styleAdviceMessage = null,
+                                        isSuggestingStyle = false,
+                                        isOptimizingImagePrompt = false,
+                                        imagePromptOriginal = null,
+                                        optimizedImagePrompt = null,
+                                        message = "已切换到图片生成。"
+                                    )
                                 }
                             },
                             onFavorite = {

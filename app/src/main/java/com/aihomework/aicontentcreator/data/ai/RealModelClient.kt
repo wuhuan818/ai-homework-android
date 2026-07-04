@@ -94,6 +94,21 @@ class RealModelClient(
         )
     }
 
+    override suspend fun optimizeImagePrompt(input: String): String {
+        validateCommonSettings(input)
+        val apiKey = apiKeyProvider()?.trim()
+        if (apiKey.isNullOrBlank()) {
+            throw ModelClientException("当前配置尚未填写模型密钥，请前往设置页补充。")
+        }
+        return postChatCompletion(
+            apiKey = apiKey,
+            model = settings.textModel.trim(),
+            messages = JSONArray()
+                .put(JSONObject().put("role", "system").put("content", SYSTEM_PROMPT))
+                .put(JSONObject().put("role", "user").put("content", imagePromptOptimizationPrompt(input)))
+        )
+    }
+
     suspend fun testTextConnection() {
         validateCommonSettings("连接测试")
         val apiKey = apiKeyProvider()?.trim()
@@ -310,6 +325,21 @@ class RealModelClient(
 
             原文：
             $text
+        """.trimIndent()
+    }
+
+    private fun imagePromptOptimizationPrompt(input: String): String {
+        return """
+            请把下面的中文图片描述优化成更适合文生图模型的提示词。
+            要求：
+            1. 只输出优化后的提示词，不要解释过程。
+            2. 保留用户原意，不编造具体品牌、人物身份、地点或事实。
+            3. 可以补充画面主体、环境、光线、风格、构图和细节。
+            4. 不要加入 seed、steps、cfg、sampler 等高级参数。
+            5. 控制在 120 字以内。
+
+            原始描述：
+            $input
         """.trimIndent()
     }
 

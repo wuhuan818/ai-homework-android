@@ -79,7 +79,7 @@ fun EditScreen(
                 modifier = Modifier.padding(12.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text("二次改写", style = MaterialTheme.typography.titleMedium)
+                Text("改写候选", style = MaterialTheme.typography.titleMedium)
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -110,22 +110,27 @@ fun EditScreen(
                             modifier = Modifier.padding(12.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Text("原文：", style = MaterialTheme.typography.titleSmall)
+                            Text("原文", style = MaterialTheme.typography.titleSmall)
                             Text(state.rewriteOriginalText)
-                            Text("改写后：", style = MaterialTheme.typography.titleSmall)
+                            Text("改写后", style = MaterialTheme.typography.titleSmall)
                             Text(state.rewriteCandidateText)
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
                                 Button(
+                                    modifier = Modifier.weight(1f),
                                     onClick = onApplyRewrite,
                                     enabled = !state.isRewriting
                                 ) {
-                                    Text("应用改写结果")
+                                    Text("应用这个版本")
                                 }
                                 OutlinedButton(
+                                    modifier = Modifier.weight(1f),
                                     onClick = onKeepOriginal,
                                     enabled = !state.isRewriting
                                 ) {
-                                    Text("保留原文")
+                                    Text("不使用")
                                 }
                             }
                         }
@@ -143,12 +148,21 @@ fun EditScreen(
             }
         }
 
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedButton(onClick = onConvertMarkdown) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            OutlinedButton(
+                modifier = Modifier.weight(1f),
+                onClick = onConvertMarkdown
+            ) {
                 Text("整理为 Markdown")
             }
-            OutlinedButton(onClick = onConvertPlainText) {
-                Text("去除 Markdown 符号")
+            OutlinedButton(
+                modifier = Modifier.weight(1f),
+                onClick = onConvertPlainText
+            ) {
+                Text("转纯文本")
             }
         }
     }

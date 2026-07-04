@@ -25,6 +25,9 @@ data class CreateUiState(
     val imageUploadNotice: String? = null,
     val isImageProcessing: Boolean = false,
     val isSuggestingStyle: Boolean = false,
+    val isOptimizingImagePrompt: Boolean = false,
+    val imagePromptOriginal: String? = null,
+    val optimizedImagePrompt: String? = null,
     val isLoading: Boolean = false,
     val result: CreationResult? = null,
     val message: String? = null

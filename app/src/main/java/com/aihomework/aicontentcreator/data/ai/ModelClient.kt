@@ -12,4 +12,6 @@ interface ModelClient {
     suspend fun suggestStyles(scenario: CreationScenario, input: String): List<StyleAdvice>
 
     suspend fun rewriteText(text: String, action: RewriteAction): String
+
+    suspend fun optimizeImagePrompt(input: String): String
 }

@@ -21,4 +21,8 @@ class CreationRepository(
     suspend fun rewriteText(text: String, action: RewriteAction): String {
         return modelClient.rewriteText(text, action)
     }
+
+    suspend fun optimizeImagePrompt(input: String): String {
+        return modelClient.optimizeImagePrompt(input)
+    }
 }
