@@ -299,6 +299,70 @@ private fun AIContentCreatorApp() {
                                     }
                                 }
                             },
+                            onApplyGrayscale = {
+                                val sourceUri = createState.processedImageUri ?: createState.selectedImageUri
+                                if (sourceUri == null) {
+                                    createState = createState.copy(message = "请先选择图片。")
+                                    return@CreateScreen
+                                }
+                                scope.launch {
+                                    createState = createState.copy(
+                                        isImageProcessing = true,
+                                        imageProcessingMessage = "正在应用黑白滤镜...",
+                                        imageUploadNotice = null
+                                    )
+                                    val result = withContext(Dispatchers.Default) {
+                                        imageProcessor.applyGrayscale(sourceUri)
+                                    }
+                                    createState = if (result.uri != null) {
+                                        createState.copy(
+                                            processedImageUri = result.uri.toString(),
+                                            isImageProcessing = false,
+                                            imageProcessingMessage = "黑白滤镜已应用。",
+                                            imageUploadNotice = null
+                                        )
+                                    } else {
+                                        createState.copy(
+                                            isImageProcessing = false,
+                                            imageProcessingMessage = result.errorMessage,
+                                            imageUploadNotice = null,
+                                            message = result.errorMessage
+                                        )
+                                    }
+                                }
+                            },
+                            onCropImage = { ratio ->
+                                val sourceUri = createState.processedImageUri ?: createState.selectedImageUri
+                                if (sourceUri == null) {
+                                    createState = createState.copy(message = "请先选择图片。")
+                                    return@CreateScreen
+                                }
+                                scope.launch {
+                                    createState = createState.copy(
+                                        isImageProcessing = true,
+                                        imageProcessingMessage = "正在中心裁剪图片...",
+                                        imageUploadNotice = null
+                                    )
+                                    val result = withContext(Dispatchers.Default) {
+                                        imageProcessor.centerCrop(sourceUri, ratio)
+                                    }
+                                    createState = if (result.uri != null) {
+                                        createState.copy(
+                                            processedImageUri = result.uri.toString(),
+                                            isImageProcessing = false,
+                                            imageProcessingMessage = "已裁剪为 ${ratio.displayName}。",
+                                            imageUploadNotice = null
+                                        )
+                                    } else {
+                                        createState.copy(
+                                            isImageProcessing = false,
+                                            imageProcessingMessage = result.errorMessage,
+                                            imageUploadNotice = null,
+                                            message = result.errorMessage
+                                        )
+                                    }
+                                }
+                            },
                             onWatermarkTextChanged = {
                                 createState = createState.copy(watermarkText = it)
                             },
@@ -348,7 +412,7 @@ private fun AIContentCreatorApp() {
                             onShareProcessedImage = {
                                 val processedImageUri = createState.processedImageUri
                                 if (processedImageUri == null) {
-                                    createState = createState.copy(message = "请先旋转图片或添加水印。")
+                                    createState = createState.copy(message = "请先处理图片。")
                                 } else {
                                     shareImage(context, processedImageUri)
                                 }
@@ -541,7 +605,15 @@ private fun AIContentCreatorApp() {
 
                         AppTab.Edit -> EditScreen(
                             state = editState,
-                            onTextChanged = { editState = editState.copy(text = it) },
+                            onTextChanged = {
+                                editState = editState.copy(
+                                    text = it,
+                                    previousEditText = null,
+                                    rewriteOriginalText = null,
+                                    rewriteCandidateText = null,
+                                    rewriteMessage = null
+                                )
+                            },
                             onSave = {
                                 val id = editState.itemId
                                 if (id == null || editState.text.isBlank()) {
@@ -551,6 +623,8 @@ private fun AIContentCreatorApp() {
                                     createState = createState.updateResultText(id, editState.text)
                                     editState = editState.copy(
                                         previousEditText = null,
+                                        rewriteOriginalText = null,
+                                        rewriteCandidateText = null,
                                         rewriteMessage = null,
                                         message = "修改已保存。"
                                     )
@@ -569,6 +643,8 @@ private fun AIContentCreatorApp() {
                                     val previousText = editState.text
                                     editState = editState.copy(
                                         previousEditText = previousText,
+                                        rewriteOriginalText = null,
+                                        rewriteCandidateText = null,
                                         isRewriting = true,
                                         rewriteMessage = "正在改写...",
                                         message = null
@@ -587,13 +663,17 @@ private fun AIContentCreatorApp() {
                                         )
                                         editState = editState.copy(
                                             isRewriting = false,
-                                            text = rewritten,
-                                            rewriteMessage = "已完成改写，原文可恢复。"
+                                            previousEditText = null,
+                                            rewriteOriginalText = previousText,
+                                            rewriteCandidateText = rewritten,
+                                            rewriteMessage = "已生成改写候选，请对比后选择。"
                                         )
                                     } catch (error: ModelClientException) {
                                         editState = editState.copy(
                                             isRewriting = false,
                                             previousEditText = null,
+                                            rewriteOriginalText = null,
+                                            rewriteCandidateText = null,
                                             rewriteMessage = error.userMessage,
                                             message = error.userMessage
                                         )
@@ -601,19 +681,42 @@ private fun AIContentCreatorApp() {
                                         editState = editState.copy(
                                             isRewriting = false,
                                             previousEditText = null,
+                                            rewriteOriginalText = null,
+                                            rewriteCandidateText = null,
                                             rewriteMessage = "改写失败，请稍后重试。",
                                             message = "改写失败，请稍后重试。"
                                         )
                                     }
                                 }
                             },
-                            onRestorePreviousEdit = {
-                                val previous = editState.previousEditText
-                                if (previous != null) {
+                            onApplyRewrite = {
+                                val candidate = editState.rewriteCandidateText
+                                if (candidate != null) {
                                     editState = editState.copy(
-                                        text = previous,
+                                        text = candidate,
                                         previousEditText = null,
-                                        rewriteMessage = "已恢复改写前内容。"
+                                        rewriteOriginalText = null,
+                                        rewriteCandidateText = null,
+                                        rewriteMessage = "已应用改写结果，保存后更新历史。"
+                                    )
+                                }
+                            },
+                            onKeepOriginal = {
+                                val original = editState.rewriteOriginalText
+                                editState = if (original != null) {
+                                    editState.copy(
+                                        text = original,
+                                        previousEditText = null,
+                                        rewriteOriginalText = null,
+                                        rewriteCandidateText = null,
+                                        rewriteMessage = "已保留原文。"
+                                    )
+                                } else {
+                                    editState.copy(
+                                        previousEditText = null,
+                                        rewriteOriginalText = null,
+                                        rewriteCandidateText = null,
+                                        rewriteMessage = null
                                     )
                                 }
                             },
@@ -658,8 +761,49 @@ private fun AIContentCreatorApp() {
                                 editState = item.toEditState()
                                 selectedTab = AppTab.Edit
                             },
+                            onReuseText = { item: HistoryItem ->
+                                createState = createState.copy(
+                                    selectedScenario = item.scenario,
+                                    input = item.input.ifBlank { item.content },
+                                    selectedImageUri = null,
+                                    processedImageUri = null,
+                                    imageProcessingMessage = null,
+                                    imageUploadNotice = null,
+                                    textStyle = TextCreationStyle.defaultFor(item.scenario),
+                                    generationCount = 1,
+                                    styleAdvice = emptyList(),
+                                    styleAdviceMessage = null,
+                                    isSuggestingStyle = false,
+                                    result = null,
+                                    message = "已从历史填入内容，请手动生成或编辑。"
+                                )
+                                selectedTab = AppTab.Create
+                            },
+                            onRegenerateImage = { item: HistoryItem ->
+                                createState = createState.copy(
+                                    selectedScenario = CreationScenario.ImageGeneration,
+                                    input = item.input.ifBlank { item.summary },
+                                    selectedImageUri = null,
+                                    processedImageUri = null,
+                                    imageProcessingMessage = null,
+                                    imageUploadNotice = "已从历史恢复图片生成设置，请手动生成图片。",
+                                    imageGenerationStyle = item.imageGenerationStyle
+                                        ?: createState.imageGenerationStyle,
+                                    imageAspectRatio = item.imageAspectRatio ?: createState.imageAspectRatio,
+                                    result = null,
+                                    message = "已从历史恢复图片生成设置。"
+                                )
+                                selectedTab = AppTab.Create
+                            },
                             onToggleFavorite = { id ->
                                 historyRepository.toggleFavorite(id)
+                            },
+                            onShareText = { item ->
+                                if (item.content.isBlank()) {
+                                    Toast.makeText(context, "暂无可分享内容。", Toast.LENGTH_SHORT).show()
+                                } else {
+                                    shareText(context, item.content)
+                                }
                             },
                             onShareImage = { item ->
                                 val uri = generatedImageFileStore.uriFor(item.imageFileName)

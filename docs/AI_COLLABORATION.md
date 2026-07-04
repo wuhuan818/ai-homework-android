@@ -364,3 +364,32 @@ Human verification points:
 - Select Qwen-Image official interface, fill the full image generation endpoint, save settings and key, then test Real image generation.
 - Confirm generated remote URLs are downloaded into local app-private files before preview, history, sharing, favorite, and delete.
 - Re-test Mock image generation, text generation, style recommendation, multi-version generation, edit rewrite and restore, image description, and history.
+
+## 2026-07-04 - Stage 14 V1 Polish
+
+Human raised:
+
+- The project is entering the last V1 polish pass before final acceptance materials.
+- App naming should become more product-like, temporarily “灵感工坊”.
+- The icon should feel warm and creative.
+- The main Create screen may receive one last structural adjustment.
+- History needs “再次使用 / 再次生成” entry points.
+- The Edit page needs original / rewritten comparison before applying rewrite output.
+- Image handling should add center crop and black-and-white filter.
+- Freehand drawing is deferred.
+- User-visible Mock wording should be weakened to “演示模式”.
+
+Codex generated or modified:
+
+- App label and adaptive icon resources.
+- Create screen grouping, image result actions, image processing groups, black-and-white filter, and center crop controls.
+- Edit screen rewrite candidate comparison and apply / keep-original actions.
+- History screen text reuse and image regeneration entries without automatic model calls.
+- Settings screen wording and advanced-configuration folding.
+- README and decision notes for the V1 polish scope.
+
+Human verification points:
+
+- Confirm launcher name and icon on a real device.
+- Manually test Create, Edit, History, image processing, image generation, and Settings paths listed in the Stage 14 checklist.
+- Review the final report and `git diff --stat` before deciding whether to commit.

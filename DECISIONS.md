@@ -94,3 +94,11 @@
 - Add a separate image generation endpoint because text Base URL and image generation service URL may be different.
 - Keep OpenAI-compatible image generation as an option while making Qwen-Image official the default for `qwen-image-2.0-pro`.
 - Download returned image URLs to app-private files before saving history, sharing, or previewing so remote URLs are not stored in history.
+
+## Stage 14 V1 Polish
+
+- Temporarily name the V1 app “灵感工坊” while preserving the Android AI 内容创作助手 positioning.
+- Keep Stage 14 as a final user-experience polish pass rather than adding accounts, cloud sync, image-to-image, inpaint, batch generation, model ranking, template markets, freehand drawing, or large dependencies.
+- Add only low-risk image processing additions: black-and-white filter and center crop, both implemented with native Android Bitmap APIs.
+- Change edit rewrite into a candidate comparison flow so original text is not overwritten until the user applies the result.
+- Make history a re-creation entry by restoring text or image-generation settings without automatically calling a model.

@@ -63,6 +63,8 @@ fun CreateScreen(
     onUseMockImage: () -> Unit,
     onChooseImage: () -> Unit,
     onRotateImage: () -> Unit,
+    onApplyGrayscale: () -> Unit,
+    onCropImage: (ImageAspectRatio) -> Unit,
     onWatermarkTextChanged: (String) -> Unit,
     onAddWatermark: () -> Unit,
     onRestoreOriginalImage: () -> Unit,
@@ -91,39 +93,44 @@ fun CreateScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Text("创作", style = MaterialTheme.typography.headlineSmall)
-        Text("选择场景，输入内容后生成。")
+        Text("灵感工坊", style = MaterialTheme.typography.headlineSmall)
+        Text("选择场景，开始创作。")
         ModeNotice(
             modelMode = modelMode,
             hasApiKey = hasApiKey,
             scenario = state.selectedScenario
         )
 
-        Text("选择创作场景", style = MaterialTheme.typography.titleMedium)
-        CreationScenario.entries.forEach { scenario ->
-            ScenarioCard(
-                scenario = scenario,
-                selected = state.selectedScenario == scenario,
-                onClick = { onScenarioSelected(scenario) }
-            )
+        ImageSection(title = "创作入口") {
+            CreationScenario.entries.forEach { scenario ->
+                ScenarioCard(
+                    scenario = scenario,
+                    selected = state.selectedScenario == scenario,
+                    onClick = { onScenarioSelected(scenario) }
+                )
+            }
         }
 
-        if (state.selectedScenario == CreationScenario.ImageGeneration) {
-            ImageGenerationOptions(
-                state = state,
-                onInputChanged = onInputChanged,
-                onImageGenerationStyleSelected = onImageGenerationStyleSelected,
-                onImageAspectRatioSelected = onImageAspectRatioSelected
-            )
-        } else {
-            OutlinedTextField(
-                modifier = Modifier.fillMaxWidth(),
-                value = state.input,
-                onValueChange = onInputChanged,
-                label = { Text(state.selectedScenario.inputHint) },
-                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
-                minLines = 3
-            )
+        ImageSection(title = "当前场景设置") {
+            Text(state.selectedScenario.displayName, style = MaterialTheme.typography.titleSmall)
+            Text(state.selectedScenario.description)
+            if (state.selectedScenario == CreationScenario.ImageGeneration) {
+                ImageGenerationOptions(
+                    state = state,
+                    onInputChanged = onInputChanged,
+                    onImageGenerationStyleSelected = onImageGenerationStyleSelected,
+                    onImageAspectRatioSelected = onImageAspectRatioSelected
+                )
+            } else {
+                OutlinedTextField(
+                    modifier = Modifier.fillMaxWidth(),
+                    value = state.input,
+                    onValueChange = onInputChanged,
+                    label = { Text(state.selectedScenario.inputHint) },
+                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+                    minLines = 3
+                )
+            }
         }
 
         if (state.selectedScenario == CreationScenario.Moments ||
@@ -196,59 +203,85 @@ fun CreateScreen(
                 ImageSection(title = "图片基础处理") {
                     val hasSelectedImage = state.selectedImageUri != null || state.processedImageUri != null
                     if (!hasSelectedImage) {
-                        Text("选择图片后可用。")
+                        Text("选择图片后可进行旋转、水印、滤镜和裁剪。")
                     }
                     state.imageProcessingMessage?.let { Text(it) }
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        OutlinedButton(
-                            modifier = Modifier.weight(1f),
-                            onClick = onRotateImage,
-                            enabled = hasSelectedImage && !state.isImageProcessing
+                    if (hasSelectedImage) {
+                        Text("基础操作", style = MaterialTheme.typography.titleSmall)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Text("旋转 90°")
-                        }
-                        OutlinedButton(
-                            modifier = Modifier.weight(1f),
-                            onClick = onShareProcessedImage,
-                            enabled = state.processedImageUri != null && !state.isImageProcessing
-                        ) {
-                            Text("分享图片")
+                            OutlinedButton(
+                                modifier = Modifier.weight(1f),
+                                onClick = onRotateImage,
+                                enabled = !state.isImageProcessing
+                            ) {
+                                Text("旋转 90°")
+                            }
+                            OutlinedButton(
+                                modifier = Modifier.weight(1f),
+                                onClick = onRestoreOriginalImage,
+                                enabled = state.processedImageUri != null && !state.isImageProcessing
+                            ) {
+                                Text("恢复原图")
+                            }
+                            OutlinedButton(
+                                modifier = Modifier.weight(1f),
+                                onClick = onShareProcessedImage,
+                                enabled = state.processedImageUri != null && !state.isImageProcessing
+                            ) {
+                                Text("分享")
+                            }
                         }
                         if (state.isImageProcessing) {
                             CircularProgressIndicator(modifier = Modifier.size(24.dp))
                         }
-                    }
 
-                    OutlinedTextField(
-                        modifier = Modifier.fillMaxWidth(),
-                        value = state.watermarkText,
-                        onValueChange = onWatermarkTextChanged,
-                        label = { Text("水印文字") },
-                        singleLine = true
-                    )
+                        Text("效果处理", style = MaterialTheme.typography.titleSmall)
+                        OutlinedTextField(
+                            modifier = Modifier.fillMaxWidth(),
+                            value = state.watermarkText,
+                            onValueChange = onWatermarkTextChanged,
+                            label = { Text("水印文字") },
+                            singleLine = true
+                        )
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        OutlinedButton(
-                            modifier = Modifier.weight(1f),
-                            onClick = onAddWatermark,
-                            enabled = hasSelectedImage && !state.isImageProcessing
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Text("添加水印")
-                        }
-                        if (state.processedImageUri != null) {
                             OutlinedButton(
                                 modifier = Modifier.weight(1f),
-                                onClick = onRestoreOriginalImage,
+                                onClick = onApplyGrayscale,
                                 enabled = !state.isImageProcessing
                             ) {
-                                Text("恢复原图")
+                                Text("黑白滤镜")
+                            }
+                            OutlinedButton(
+                                modifier = Modifier.weight(1f),
+                                onClick = onAddWatermark,
+                                enabled = !state.isImageProcessing
+                            ) {
+                                Text("添加水印")
+                            }
+                        }
+
+                        Text("裁剪比例", style = MaterialTheme.typography.titleSmall)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            ImageAspectRatio.entries.forEach { ratio ->
+                                OutlinedButton(
+                                    onClick = { onCropImage(ratio) },
+                                    enabled = !state.isImageProcessing
+                                ) {
+                                    Text(ratio.displayName)
+                                }
                             }
                         }
                     }
@@ -278,32 +311,56 @@ fun CreateScreen(
         }
 
         state.result?.let { result ->
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    if (result.contentType == HistoryContentType.IMAGE) {
-                        Text("图片生成结果", style = MaterialTheme.typography.titleMedium)
-                        Text(result.scenario.displayName, style = MaterialTheme.typography.bodyMedium)
-                        ImagePreview(uriText = result.imagePreviewUri)
-                        Text(result.content)
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ImageSection(title = "生成结果") {
+                if (result.contentType == HistoryContentType.IMAGE) {
+                    Text(result.scenario.displayName, style = MaterialTheme.typography.bodyMedium)
+                    ImagePreview(uriText = result.imagePreviewUri)
+                    Text(result.content)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Button(
+                            modifier = Modifier.weight(1f),
+                            onClick = onSaveImage
                         ) {
-                            OutlinedButton(
-                                modifier = Modifier.weight(1f),
-                                onClick = onShare
-                            ) {
-                                Text("分享图片")
-                            }
-                            OutlinedButton(
-                                modifier = Modifier.weight(1f),
-                                onClick = onSaveImage
-                            ) {
-                                Text("保存到相册")
-                            }
+                            Text("保存到相册")
+                        }
+                        OutlinedButton(
+                            modifier = Modifier.weight(1f),
+                            onClick = onShare
+                        ) {
+                            Text("分享")
+                        }
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedButton(
+                            modifier = Modifier.weight(1f),
+                            onClick = onFavorite
+                        ) {
+                            Text(if (isCurrentResultFavorite) "取消收藏" else "收藏")
+                        }
+                        OutlinedButton(
+                            modifier = Modifier.weight(1f),
+                            onClick = onGenerate,
+                            enabled = !state.isLoading
+                        ) {
+                            Text("重新生成")
+                        }
+                    }
+                    Text("已保存到历史", style = MaterialTheme.typography.bodySmall)
+                } else {
+                    Text(result.scenario.displayName, style = MaterialTheme.typography.bodyMedium)
+                    Text(result.content)
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(
+                            modifier = Modifier.fillMaxWidth(),
+                            onClick = onEdit
+                        ) {
+                            Text("编辑")
                         }
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -317,46 +374,15 @@ fun CreateScreen(
                             }
                             OutlinedButton(
                                 modifier = Modifier.weight(1f),
-                                onClick = onGenerate,
-                                enabled = !state.isLoading
+                                onClick = onShare
                             ) {
-                                Text("重新生成")
+                                Text("分享")
                             }
-                        }
-                        Text("已保存到历史", style = MaterialTheme.typography.bodySmall)
-                    } else {
-                        Text("创作结果", style = MaterialTheme.typography.titleMedium)
-                        Text(result.scenario.displayName, style = MaterialTheme.typography.bodyMedium)
-                        Text(result.content)
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Button(
-                                modifier = Modifier.fillMaxWidth(),
-                                onClick = onEdit
+                            OutlinedButton(
+                                modifier = Modifier.weight(1f),
+                                onClick = onCopyResult
                             ) {
-                                Text("编辑")
-                            }
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                OutlinedButton(
-                                    modifier = Modifier.weight(1f),
-                                    onClick = onFavorite
-                                ) {
-                                    Text(if (isCurrentResultFavorite) "取消收藏" else "收藏")
-                                }
-                                OutlinedButton(
-                                    modifier = Modifier.weight(1f),
-                                    onClick = onShare
-                                ) {
-                                    Text("分享")
-                                }
-                                OutlinedButton(
-                                    modifier = Modifier.weight(1f),
-                                    onClick = onCopyResult
-                                ) {
-                                    Text("复制")
-                                }
+                                Text("复制")
                             }
                         }
                     }
@@ -373,7 +399,8 @@ private fun ImageGenerationOptions(
     onImageGenerationStyleSelected: (ImageGenerationStyle) -> Unit,
     onImageAspectRatioSelected: (ImageAspectRatio) -> Unit
 ) {
-    ImageSection(title = "图片生成") {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text("生成设置", style = MaterialTheme.typography.titleSmall)
         OutlinedTextField(
             modifier = Modifier.fillMaxWidth(),
             value = state.input,

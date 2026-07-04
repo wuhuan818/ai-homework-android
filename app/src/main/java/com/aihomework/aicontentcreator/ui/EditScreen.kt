@@ -32,7 +32,8 @@ fun EditScreen(
     onTextChanged: (String) -> Unit,
     onSave: () -> Unit,
     onRewrite: (RewriteAction) -> Unit,
-    onRestorePreviousEdit: () -> Unit,
+    onApplyRewrite: () -> Unit,
+    onKeepOriginal: () -> Unit,
     onConvertMarkdown: () -> Unit,
     onConvertPlainText: () -> Unit,
     onShare: () -> Unit,
@@ -103,12 +104,31 @@ fun EditScreen(
                 state.rewriteMessage?.let { message ->
                     Text(message, color = MaterialTheme.colorScheme.primary)
                 }
-                if (state.previousEditText != null) {
-                    OutlinedButton(
-                        onClick = onRestorePreviousEdit,
-                        enabled = !state.isRewriting
-                    ) {
-                        Text("恢复改写前内容")
+                if (state.rewriteOriginalText != null && state.rewriteCandidateText != null) {
+                    Card(modifier = Modifier.fillMaxWidth()) {
+                        Column(
+                            modifier = Modifier.padding(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text("原文：", style = MaterialTheme.typography.titleSmall)
+                            Text(state.rewriteOriginalText)
+                            Text("改写后：", style = MaterialTheme.typography.titleSmall)
+                            Text(state.rewriteCandidateText)
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Button(
+                                    onClick = onApplyRewrite,
+                                    enabled = !state.isRewriting
+                                ) {
+                                    Text("应用改写结果")
+                                }
+                                OutlinedButton(
+                                    onClick = onKeepOriginal,
+                                    enabled = !state.isRewriting
+                                ) {
+                                    Text("保留原文")
+                                }
+                            }
+                        }
                     }
                 }
             }

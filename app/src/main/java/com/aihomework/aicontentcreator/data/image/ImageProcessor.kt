@@ -5,6 +5,8 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.ColorMatrix
+import android.graphics.ColorMatrixColorFilter
 import android.graphics.ImageDecoder
 import android.graphics.Matrix
 import android.graphics.Paint
@@ -13,6 +15,7 @@ import android.os.Build
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.content.FileProvider
 import com.aihomework.aicontentcreator.R
+import com.aihomework.aicontentcreator.data.model.ImageAspectRatio
 import java.io.File
 import java.io.FileOutputStream
 import kotlin.math.max
@@ -51,6 +54,37 @@ class ImageProcessor(private val context: Context) {
         return process(uriText) { source ->
             val matrix = Matrix().apply { postRotate(degrees) }
             Bitmap.createBitmap(source, 0, 0, source.width, source.height, matrix, true)
+        }
+    }
+
+    fun applyGrayscale(uriText: String): ImageProcessResult {
+        return process(uriText) { source ->
+            val output = Bitmap.createBitmap(source.width, source.height, Bitmap.Config.ARGB_8888)
+            val canvas = Canvas(output)
+            val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                colorFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0f) })
+            }
+            canvas.drawBitmap(source, 0f, 0f, paint)
+            output
+        }
+    }
+
+    fun centerCrop(uriText: String, aspectRatio: ImageAspectRatio): ImageProcessResult {
+        return process(uriText) { source ->
+            val targetRatio = aspectRatio.width.toFloat() / aspectRatio.height.toFloat()
+            val sourceRatio = source.width.toFloat() / source.height.toFloat()
+            val cropWidth: Int
+            val cropHeight: Int
+            if (sourceRatio > targetRatio) {
+                cropHeight = source.height
+                cropWidth = max(1, (cropHeight * targetRatio).toInt())
+            } else {
+                cropWidth = source.width
+                cropHeight = max(1, (cropWidth / targetRatio).toInt())
+            }
+            val left = max(0, (source.width - cropWidth) / 2)
+            val top = max(0, (source.height - cropHeight) / 2)
+            Bitmap.createBitmap(source, left, top, cropWidth, cropHeight)
         }
     }
 

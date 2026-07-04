@@ -48,7 +48,10 @@ import java.util.Locale
 fun HistoryScreen(
     state: HistoryUiState,
     onOpenForEdit: (HistoryItem) -> Unit,
+    onReuseText: (HistoryItem) -> Unit,
+    onRegenerateImage: (HistoryItem) -> Unit,
     onToggleFavorite: (Long) -> Unit,
+    onShareText: (HistoryItem) -> Unit,
     onShareImage: (HistoryItem) -> String?,
     onSaveImage: (HistoryItem) -> String?,
     onDeleteItem: (Long) -> String?,
@@ -159,7 +162,10 @@ fun HistoryScreen(
                         HistoryCard(
                             item = item,
                             onOpenForEdit = { onOpenForEdit(item) },
+                            onReuseText = { onReuseText(item) },
+                            onRegenerateImage = { onRegenerateImage(item) },
                             onToggleFavorite = { onToggleFavorite(item.id) },
+                            onShareText = { onShareText(item) },
                             onShareImage = {
                                 val errorMessage = onShareImage(item)
                                 if (errorMessage != null) {
@@ -183,7 +189,10 @@ fun HistoryScreen(
 private fun HistoryCard(
     item: HistoryItem,
     onOpenForEdit: () -> Unit,
+    onReuseText: () -> Unit,
+    onRegenerateImage: () -> Unit,
     onToggleFavorite: () -> Unit,
+    onShareText: () -> Unit,
     onShareImage: () -> Unit,
     onSaveImage: () -> Unit,
     onDelete: () -> Unit
@@ -213,34 +222,89 @@ private fun HistoryCard(
                 Text("比例：${item.imageAspectRatio?.displayName ?: "未记录"}")
                 Text(item.summary, maxLines = 3)
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Button(onClick = onShareImage) {
-                            Text("分享图片")
-                        }
-                        OutlinedButton(onClick = onSaveImage) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Button(
+                            modifier = Modifier.weight(1f),
+                            onClick = onSaveImage
+                        ) {
                             Text("保存到相册")
                         }
+                        OutlinedButton(
+                            modifier = Modifier.weight(1f),
+                            onClick = onShareImage
+                        ) {
+                            Text("分享")
+                        }
                     }
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedButton(onClick = onToggleFavorite) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedButton(
+                            modifier = Modifier.weight(1f),
+                            onClick = onRegenerateImage
+                        ) {
+                            Text("再次生成")
+                        }
+                        OutlinedButton(
+                            modifier = Modifier.weight(1f),
+                            onClick = onToggleFavorite
+                        ) {
                             Text(if (item.isFavorite) "取消收藏" else "收藏")
                         }
-                        OutlinedButton(onClick = onDelete) {
-                            Text("删除")
-                        }
+                    }
+                    OutlinedButton(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = onDelete
+                    ) {
+                        Text("删除")
                     }
                 }
             } else {
                 Text(item.summary)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = onOpenForEdit) {
-                        Text("编辑")
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Button(
+                            modifier = Modifier.weight(1f),
+                            onClick = onOpenForEdit
+                        ) {
+                            Text("编辑")
+                        }
+                        OutlinedButton(
+                            modifier = Modifier.weight(1f),
+                            onClick = onReuseText
+                        ) {
+                            Text("再次使用")
+                        }
                     }
-                    OutlinedButton(onClick = onToggleFavorite) {
-                        Text(if (item.isFavorite) "取消收藏" else "收藏")
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedButton(
+                            modifier = Modifier.weight(1f),
+                            onClick = onToggleFavorite
+                        ) {
+                            Text(if (item.isFavorite) "取消收藏" else "收藏")
+                        }
+                        OutlinedButton(
+                            modifier = Modifier.weight(1f),
+                            onClick = onShareText
+                        ) {
+                            Text("分享")
+                        }
                     }
-                    OutlinedButton(onClick = onDelete) {
-                        Text("删除")
+                    OutlinedButton(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = onDelete
+                    ) {
+                            Text("删除")
                     }
                 }
             }

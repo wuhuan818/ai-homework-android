@@ -3,7 +3,9 @@
 
     <application
         android:allowBackup="true"
-        android:label="AIContentCreator"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher"
+        android:label="灵感工坊"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <provider

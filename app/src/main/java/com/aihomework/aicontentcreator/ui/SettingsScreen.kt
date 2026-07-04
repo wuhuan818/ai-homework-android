@@ -16,8 +16,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -52,6 +57,7 @@ fun SettingsScreen(
     onMessageShown: () -> Unit
 ) {
     val context = LocalContext.current
+    var showAdvancedConfig by remember { mutableStateOf(false) }
 
     LaunchedEffect(message) {
         message?.let {
@@ -84,7 +90,7 @@ fun SettingsScreen(
                 FilterChip(
                     selected = settings.mode == ModelMode.Real,
                     onClick = { onModeChanged(ModelMode.Real) },
-                    label = { Text("真实模型模式") }
+                    label = { Text("真实模式") }
                 )
             }
         }
@@ -106,6 +112,13 @@ fun SettingsScreen(
         }
 
         SettingsSection(title = "高级配置") {
+            TextButton(onClick = { showAdvancedConfig = !showAdvancedConfig }) {
+                Text(if (showAdvancedConfig) "收起高级配置" else "展开高级配置")
+            }
+            if (!showAdvancedConfig) {
+                Text("高级配置已折叠，当前配置可继续用于生成和自测。")
+                return@SettingsSection
+            }
             OutlinedTextField(
                 modifier = Modifier.fillMaxWidth(),
                 value = settings.activeProfile.name,
@@ -212,7 +225,7 @@ fun SettingsScreen(
         }
 
         SettingsSection(title = "安全与存储") {
-            Text("模型密钥和历史内容均本地加密保存。")
+            Text("模型密钥和历史元数据本地加密保存。")
             Text(historyStorageStatus)
         }
     }
@@ -237,6 +250,6 @@ private fun SettingsSection(
 private fun ModelMode.displayText(): String {
     return when (this) {
         ModelMode.Mock -> "演示模式"
-        ModelMode.Real -> "真实模型模式"
+        ModelMode.Real -> "真实模式"
     }
 }

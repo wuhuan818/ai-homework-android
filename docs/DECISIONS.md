@@ -133,3 +133,14 @@
 - Keep the OpenAI-compatible image interface as an option so existing compatible gateways still work without changing their configuration.
 - Do not implement asynchronous task polling in this stage because `qwen-image-2.0-pro` is being adapted through the recommended synchronous HTTP path for the current test target.
 - Download generated remote URLs into app-private local files before history and sharing so encrypted history stores only metadata and not a remote image URL.
+
+## 2026-07-04 - Stage 14 V1 Polish
+
+- Use “灵感工坊” as the temporary V1 product name because it is more understandable to end users than the engineering project name while still fitting the original AI 内容创作助手 positioning.
+- Use a warm creative adaptive icon because the app is a creation tool, and a pen tip, image frame, speech bubble, and star accents communicate writing, images, conversation, and inspiration without external copyrighted assets.
+- Change the Edit page rewrite flow to original / rewritten comparison because immediately replacing the editing text makes it hard for users to compare and can feel destructive.
+- Add History “再次使用 / 再次生成” because history should be a re-creation entry, not only a storage list; restoring inputs without auto-generating keeps user control and avoids surprise model calls.
+- Add only black-and-white filter and center crop because they are useful, native Bitmap operations that do not require new libraries or a complex editor surface.
+- Continue to defer freehand drawing and complex filter collections because they would expand the UI and testing surface beyond a V1 polish pass.
+- Continue to defer gesture crop because center crop gives a low-risk crop path now while preserving room for a future manual selection interaction.
+- Weaken user-visible Mock wording to “演示模式” because it explains the local-generation behavior without exposing implementation language; technical docs can still mention Mock where useful.
