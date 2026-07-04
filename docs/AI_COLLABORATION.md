@@ -213,3 +213,33 @@ AI risk notes:
 
 - Provider-specific error bodies vary, so Vision capability fallback uses conservative image-related hints instead of falling back on every HTTP 400.
 - JPEG conversion can reduce fine visual detail, but it improves compatibility and keeps the original image untouched.
+
+## 2026-07-04 - Stage 10 UI Image Experience
+
+Human raised:
+
+- The Create screen had redundant UI copy near the top.
+- The image description area felt visually unbalanced, with vertical style choices leaving awkward empty space.
+- The “使用示例图片” action did not actually show a picture.
+- Image generation was discussed, but the current stage should not make it part of the main product line.
+
+Codex generated or modified:
+
+- Create screen copy was shortened to a direct action prompt while keeping Mock / Real mode notices.
+- Image description controls were grouped into `描述风格`、`图片来源`、`图片基础处理` modules.
+- The three image description styles were changed to a horizontal selector.
+- A small local sample image drawable is rendered into cache so “使用示例图片” shows a real preview and can flow through image description and processing.
+- `恢复原图` clears only the processed image Uri and keeps the selected original image available.
+- The result card gained a low-risk `复制文本` action using the Android clipboard.
+
+Human verification points:
+
+- Confirm the Create screen feels lighter and still shows privacy/mode notices.
+- Confirm “使用示例图片” displays the built-in image preview.
+- Confirm rotate/watermark switch the status to processed image, and `恢复原图` switches it back.
+- Re-test Mock mode, Real mode, image compression notice, history delete, favorites, encrypted history, and sharing.
+
+AI risk notes:
+
+- The built-in sample image is intentionally simple and local; it is for workflow demonstration, not model-quality evaluation.
+- Real-device testing should confirm button wrapping and preview sizing on the target phone.

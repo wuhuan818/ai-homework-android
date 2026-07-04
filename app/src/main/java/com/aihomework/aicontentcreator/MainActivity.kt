@@ -1,5 +1,7 @@
 package com.aihomework.aicontentcreator
 
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -140,13 +142,36 @@ private fun AIContentCreatorApp() {
                             },
                             onInputChanged = { createState = createState.copy(input = it) },
                             onUseMockImage = {
-                                createState = createState.copy(
-                                    input = "示例图片：夜晚城市街道和明亮招牌",
-                                    selectedImageUri = null,
-                                    processedImageUri = null,
-                                    imageProcessingMessage = "已使用示例图片线索，不会上传真实图片。",
-                                    imageUploadNotice = null
-                                )
+                                scope.launch {
+                                    createState = createState.copy(
+                                        isImageProcessing = true,
+                                        imageProcessingMessage = "正在加载示例图片...",
+                                        imageUploadNotice = null
+                                    )
+                                    val result = withContext(Dispatchers.Default) {
+                                        imageProcessor.createSampleImage()
+                                    }
+                                    createState = if (result.uri != null) {
+                                        createState.copy(
+                                            input = createState.input.ifBlank {
+                                                "示例图片：夜晚城市街道和明亮招牌"
+                                            },
+                                            selectedImageUri = result.uri.toString(),
+                                            processedImageUri = null,
+                                            isImageProcessing = false,
+                                            imageProcessingMessage = "已使用内置示例图片，可用于演示图片描述。",
+                                            imageUploadNotice = null,
+                                            message = "示例图片已加载。"
+                                        )
+                                    } else {
+                                        createState.copy(
+                                            isImageProcessing = false,
+                                            imageProcessingMessage = result.errorMessage,
+                                            imageUploadNotice = null,
+                                            message = result.errorMessage
+                                        )
+                                    }
+                                }
                             },
                             onChooseImage = {
                                 imagePickerLauncher.launch(
@@ -224,6 +249,14 @@ private fun AIContentCreatorApp() {
                                         )
                                     }
                                 }
+                            },
+                            onRestoreOriginalImage = {
+                                createState = createState.copy(
+                                    processedImageUri = null,
+                                    imageProcessingMessage = "已恢复为原图。",
+                                    imageUploadNotice = null,
+                                    message = "已恢复为原图。"
+                                )
                             },
                             onShareProcessedImage = {
                                 val processedImageUri = createState.processedImageUri
@@ -309,6 +342,18 @@ private fun AIContentCreatorApp() {
                                     createState = createState.copy(message = "暂无可分享内容。")
                                 } else {
                                     shareText(context, text)
+                                }
+                            },
+                            onCopyResult = {
+                                val text = createState.result?.content.orEmpty()
+                                if (text.isBlank()) {
+                                    createState = createState.copy(message = "暂无可复制内容。")
+                                } else {
+                                    val clipboard = context.getSystemService(ClipboardManager::class.java)
+                                    clipboard.setPrimaryClip(
+                                        ClipData.newPlainText("创作结果", text)
+                                    )
+                                    createState = createState.copy(message = "已复制到剪贴板。")
                                 }
                             },
                             onMessageShown = {

@@ -86,3 +86,11 @@
 - Prepare a vision upload copy that may be compressed or converted to JPEG because HEIC, HEIF, unknown MIME types, and large device photos can be rejected by compatible providers even when the original image is valid on the device.
 - Keep upload copy preparation separate from the selected or processed image Uri so rotation, watermark, preview, and image sharing continue to use the existing image flow.
 - Save the current profile fields before saving that profile's API Key because users often edit Base URL/model fields and key together, and a key save should not leave the profile pointing at stale configuration values.
+
+## 2026-07-04 - Stage 10 UI Image Experience
+
+- Remove the Create screen's broad capability sentence because the page already has scenario cards and mode notices; repeating the app feature list makes the top area feel heavier without helping the next action.
+- Keep the short prompt `选择场景，开始创作。` so the user sees an immediate action cue while the existing Mock / Real mode and privacy notices remain visible.
+- Do not add image generation because the current stage is about image description, preview, and basic processing experience; generation would require new product scope, stronger safety wording, and likely new provider behavior.
+- Add only `恢复原图` instead of a complex editor because clearing `processedImageUri` restores the selected image with minimal state risk and preserves the existing rotate, watermark, share, Mock, and Real paths.
+- Use a small local drawable example image rendered into cache rather than a network image so demos work offline, avoid copyright-sensitive user photos, and provide a normal content Uri for preview, processing, and Real-mode vision preparation.

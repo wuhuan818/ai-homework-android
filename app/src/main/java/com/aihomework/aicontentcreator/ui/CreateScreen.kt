@@ -10,6 +10,7 @@ import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -53,11 +54,13 @@ fun CreateScreen(
     onRotateImage: () -> Unit,
     onWatermarkTextChanged: (String) -> Unit,
     onAddWatermark: () -> Unit,
+    onRestoreOriginalImage: () -> Unit,
     onShareProcessedImage: () -> Unit,
     onGenerate: () -> Unit,
     onEdit: () -> Unit,
     onFavorite: () -> Unit,
     onShare: () -> Unit,
+    onCopyResult: () -> Unit,
     onMessageShown: () -> Unit
 ) {
     val context = LocalContext.current
@@ -76,7 +79,7 @@ fun CreateScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Text("AI 内容创作助手", style = MaterialTheme.typography.headlineSmall)
-        Text("支持文案生成、图片描述、编辑收藏与本地加密保存。")
+        Text("选择场景，开始创作。")
         ModeNotice(modelMode = modelMode, hasApiKey = hasApiKey)
 
         Text("创作场景", style = MaterialTheme.typography.titleMedium)
@@ -99,68 +102,115 @@ fun CreateScreen(
 
         if (state.selectedScenario == CreationScenario.ImageDescription) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("图片基础处理", style = MaterialTheme.typography.titleMedium)
-                Text("当前描述风格：${state.imageDescriptionStyle.displayName}")
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    ImageDescriptionStyle.entries.forEach { style ->
-                        FilterChip(
-                            selected = state.imageDescriptionStyle == style,
-                            onClick = { onImageDescriptionStyleSelected(style) },
-                            label = { Text(style.displayName) }
-                        )
-                    }
-                }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = onChooseImage) {
-                        Text("选择图片")
-                    }
-                    OutlinedButton(onClick = onUseMockImage) {
-                        Text("使用示例图片")
-                    }
-                }
-
-                val previewUri = state.processedImageUri ?: state.selectedImageUri
-                val imageStatus = when {
-                    state.processedImageUri != null -> "处理后的图片已生成，可继续处理或分享。"
-                    state.selectedImageUri != null -> "已选择图片，可旋转或添加文字水印。"
-                    else -> "尚未选择图片。"
-                }
-                Text(imageStatus)
-                ImagePreview(uriText = previewUri)
-
-                state.imageProcessingMessage?.let { Text(it) }
-                state.imageUploadNotice?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
-
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(
-                        onClick = onRotateImage,
-                        enabled = !state.isImageProcessing
+                ImageSection(title = "描述风格") {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Text("旋转 90°")
-                    }
-                    OutlinedButton(
-                        onClick = onShareProcessedImage,
-                        enabled = !state.isImageProcessing
-                    ) {
-                        Text("分享图片")
-                    }
-                    if (state.isImageProcessing) {
-                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                        ImageDescriptionStyle.entries.forEach { style ->
+                            FilterChip(
+                                modifier = Modifier.weight(1f),
+                                selected = state.imageDescriptionStyle == style,
+                                onClick = { onImageDescriptionStyleSelected(style) },
+                                label = { Text(style.displayName) }
+                            )
+                        }
                     }
                 }
 
-                OutlinedTextField(
-                    modifier = Modifier.fillMaxWidth(),
-                    value = state.watermarkText,
-                    onValueChange = onWatermarkTextChanged,
-                    label = { Text("水印文字") },
-                    singleLine = true
-                )
-                OutlinedButton(
-                    onClick = onAddWatermark,
-                    enabled = !state.isImageProcessing
-                ) {
-                    Text("添加水印")
+                ImageSection(title = "图片来源") {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedButton(
+                            modifier = Modifier.weight(1f),
+                            onClick = onChooseImage
+                        ) {
+                            Text("选择图片")
+                        }
+                        OutlinedButton(
+                            modifier = Modifier.weight(1f),
+                            onClick = onUseMockImage
+                        ) {
+                            Text("使用示例图片")
+                        }
+                    }
+
+                    val previewUri = state.processedImageUri ?: state.selectedImageUri
+                    val currentImageText = when {
+                        state.processedImageUri != null -> "当前使用：处理后图片"
+                        state.selectedImageUri != null -> "当前使用：原图"
+                        else -> "当前使用：未选择图片"
+                    }
+                    Text(currentImageText)
+                    ImagePreview(uriText = previewUri)
+                    state.imageUploadNotice?.let { notice ->
+                        Text(notice, color = MaterialTheme.colorScheme.primary)
+                        if (notice.contains("转换/压缩")) {
+                            Text(
+                                "压缩/转换只用于识别，不覆盖原图。",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                }
+
+                ImageSection(title = "图片基础处理") {
+                    state.imageProcessingMessage?.let { Text(it) }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedButton(
+                            modifier = Modifier.weight(1f),
+                            onClick = onRotateImage,
+                            enabled = !state.isImageProcessing
+                        ) {
+                            Text("旋转 90°")
+                        }
+                        OutlinedButton(
+                            modifier = Modifier.weight(1f),
+                            onClick = onShareProcessedImage,
+                            enabled = !state.isImageProcessing
+                        ) {
+                            Text("分享图片")
+                        }
+                        if (state.isImageProcessing) {
+                            CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                        }
+                    }
+
+                    OutlinedTextField(
+                        modifier = Modifier.fillMaxWidth(),
+                        value = state.watermarkText,
+                        onValueChange = onWatermarkTextChanged,
+                        label = { Text("水印文字") },
+                        singleLine = true
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedButton(
+                            modifier = Modifier.weight(1f),
+                            onClick = onAddWatermark,
+                            enabled = !state.isImageProcessing
+                        ) {
+                            Text("添加水印")
+                        }
+                        if (state.processedImageUri != null) {
+                            OutlinedButton(
+                                modifier = Modifier.weight(1f),
+                                onClick = onRestoreOriginalImage,
+                                enabled = !state.isImageProcessing
+                            ) {
+                                Text("恢复原图")
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -186,19 +236,55 @@ fun CreateScreen(
                     Text("创作结果", style = MaterialTheme.typography.titleMedium)
                     Text(result.scenario.displayName, style = MaterialTheme.typography.bodyMedium)
                     Text(result.content)
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Button(onClick = onEdit) {
-                            Text("编辑")
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Button(
+                                modifier = Modifier.weight(1f),
+                                onClick = onEdit
+                            ) {
+                                Text("编辑")
+                            }
+                            OutlinedButton(
+                                modifier = Modifier.weight(1f),
+                                onClick = onFavorite
+                            ) {
+                                Text("收藏")
+                            }
+                            OutlinedButton(
+                                modifier = Modifier.weight(1f),
+                                onClick = onShare
+                            ) {
+                                Text("分享")
+                            }
                         }
-                        OutlinedButton(onClick = onFavorite) {
-                            Text("收藏")
-                        }
-                        OutlinedButton(onClick = onShare) {
-                            Text("分享")
+                        OutlinedButton(
+                            modifier = Modifier.fillMaxWidth(),
+                            onClick = onCopyResult
+                        ) {
+                            Text("复制文本")
                         }
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun ImageSection(
+    title: String,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(title, style = MaterialTheme.typography.titleMedium)
+            content()
         }
     }
 }

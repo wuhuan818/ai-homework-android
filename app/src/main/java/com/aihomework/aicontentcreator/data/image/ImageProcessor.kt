@@ -10,7 +10,9 @@ import android.graphics.Matrix
 import android.graphics.Paint
 import android.net.Uri
 import android.os.Build
+import androidx.core.content.res.ResourcesCompat
 import androidx.core.content.FileProvider
+import com.aihomework.aicontentcreator.R
 import java.io.File
 import java.io.FileOutputStream
 import kotlin.math.max
@@ -22,6 +24,29 @@ data class ImageProcessResult(
 )
 
 class ImageProcessor(private val context: Context) {
+    fun createSampleImage(): ImageProcessResult {
+        return try {
+            val drawable = ResourcesCompat.getDrawable(
+                context.resources,
+                R.drawable.sample_city_image,
+                null
+            ) ?: return ImageProcessResult(errorMessage = "无法加载示例图片。")
+            val bitmap = Bitmap.createBitmap(
+                SAMPLE_IMAGE_WIDTH,
+                SAMPLE_IMAGE_HEIGHT,
+                Bitmap.Config.ARGB_8888
+            )
+            val canvas = Canvas(bitmap)
+            drawable.setBounds(0, 0, SAMPLE_IMAGE_WIDTH, SAMPLE_IMAGE_HEIGHT)
+            drawable.draw(canvas)
+            val uri = saveBitmap(bitmap)
+            bitmap.recycle()
+            ImageProcessResult(uri = uri)
+        } catch (error: Exception) {
+            ImageProcessResult(errorMessage = "示例图片加载失败，请重试。")
+        }
+    }
+
     fun rotateImage(uriText: String, degrees: Float): ImageProcessResult {
         return process(uriText) { source ->
             val matrix = Matrix().apply { postRotate(degrees) }
@@ -152,5 +177,7 @@ class ImageProcessor(private val context: Context) {
         private const val MAX_IMAGE_DIMENSION = 2048
         private const val MAX_WATERMARK_LENGTH = 80
         private const val JPEG_QUALITY = 92
+        private const val SAMPLE_IMAGE_WIDTH = 640
+        private const val SAMPLE_IMAGE_HEIGHT = 400
     }
 }

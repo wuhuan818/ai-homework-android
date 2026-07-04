@@ -55,3 +55,10 @@
 - Mock fallback is acceptable only for image preparation or image-input capability problems, and must be clearly labeled as demo fallback.
 - Vision upload can use a compressed or JPEG-converted copy to improve provider compatibility without overwriting the original image or processed share image.
 - Saving an API Key should first save the current active profile fields so endpoint/model edits and key storage stay in sync.
+
+## Stage 10 UI Image Experience
+
+- Reduce project-introduction copy on the Create screen so users can start from the scenario choice instead of rereading app capabilities.
+- Keep image work focused on preview, local example image, rotation, watermark, restore original, and sharing; do not add image generation in this stage.
+- Add restore original by clearing only the processed image Uri so the selected image path remains stable and cache cleanup does not become part of the current scope.
+- Use a small local drawable example image rendered to cache instead of network images, copyrighted photos, user photos, or a larger asset pipeline.
