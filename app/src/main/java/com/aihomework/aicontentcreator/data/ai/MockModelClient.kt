@@ -22,6 +22,8 @@ class MockModelClient : ModelClient {
                 input = cleanInput,
                 style = request.imageDescriptionStyle
             )
+
+            CreationScenario.ImageGeneration -> "【演示模式生成】\n图片生成请使用创作页的图片生成区域。"
         }
 
         val now = System.currentTimeMillis()
@@ -44,6 +46,7 @@ class MockModelClient : ModelClient {
             CreationScenario.Moments -> suggestMomentStyles(cleanInput)
             CreationScenario.Product -> suggestProductStyles(cleanInput)
             CreationScenario.ImageDescription -> emptyList()
+            CreationScenario.ImageGeneration -> emptyList()
         }
     }
 

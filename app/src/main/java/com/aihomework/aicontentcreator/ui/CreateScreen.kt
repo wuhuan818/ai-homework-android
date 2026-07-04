@@ -39,7 +39,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import com.aihomework.aicontentcreator.data.model.CreationScenario
+import com.aihomework.aicontentcreator.data.model.HistoryContentType
+import com.aihomework.aicontentcreator.data.model.ImageAspectRatio
 import com.aihomework.aicontentcreator.data.model.ImageDescriptionStyle
+import com.aihomework.aicontentcreator.data.model.ImageGenerationStyle
 import com.aihomework.aicontentcreator.data.model.TextCreationStyle
 import com.aihomework.aicontentcreator.data.settings.ModelMode
 import com.aihomework.aicontentcreator.ui.state.CreateUiState
@@ -51,6 +54,8 @@ fun CreateScreen(
     hasApiKey: Boolean,
     onScenarioSelected: (CreationScenario) -> Unit,
     onImageDescriptionStyleSelected: (ImageDescriptionStyle) -> Unit,
+    onImageGenerationStyleSelected: (ImageGenerationStyle) -> Unit,
+    onImageAspectRatioSelected: (ImageAspectRatio) -> Unit,
     onTextStyleSelected: (TextCreationStyle) -> Unit,
     onGenerationCountChanged: (Int) -> Unit,
     onSuggestStyle: () -> Unit,
@@ -66,7 +71,9 @@ fun CreateScreen(
     onEdit: () -> Unit,
     onFavorite: () -> Unit,
     onShare: () -> Unit,
+    onSaveImage: () -> Unit,
     onCopyResult: () -> Unit,
+    isCurrentResultFavorite: Boolean,
     onMessageShown: () -> Unit
 ) {
     val context = LocalContext.current
@@ -86,7 +93,11 @@ fun CreateScreen(
     ) {
         Text("创作", style = MaterialTheme.typography.headlineSmall)
         Text("选择场景，输入内容后生成。")
-        ModeNotice(modelMode = modelMode, hasApiKey = hasApiKey)
+        ModeNotice(
+            modelMode = modelMode,
+            hasApiKey = hasApiKey,
+            scenario = state.selectedScenario
+        )
 
         Text("选择创作场景", style = MaterialTheme.typography.titleMedium)
         CreationScenario.entries.forEach { scenario ->
@@ -97,14 +108,23 @@ fun CreateScreen(
             )
         }
 
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth(),
-            value = state.input,
-            onValueChange = onInputChanged,
-            label = { Text(state.selectedScenario.inputHint) },
-            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
-            minLines = 3
-        )
+        if (state.selectedScenario == CreationScenario.ImageGeneration) {
+            ImageGenerationOptions(
+                state = state,
+                onInputChanged = onInputChanged,
+                onImageGenerationStyleSelected = onImageGenerationStyleSelected,
+                onImageAspectRatioSelected = onImageAspectRatioSelected
+            )
+        } else {
+            OutlinedTextField(
+                modifier = Modifier.fillMaxWidth(),
+                value = state.input,
+                onValueChange = onInputChanged,
+                label = { Text(state.selectedScenario.inputHint) },
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+                minLines = 3
+            )
+        }
 
         if (state.selectedScenario == CreationScenario.Moments ||
             state.selectedScenario == CreationScenario.Product
@@ -236,15 +256,24 @@ fun CreateScreen(
             }
         }
 
+        if (state.isLoading && state.selectedScenario == CreationScenario.ImageGeneration) {
+            Text("正在生成图片...", color = MaterialTheme.colorScheme.primary)
+        }
+
         Button(
             onClick = onGenerate,
             enabled = !state.isLoading,
             modifier = Modifier.fillMaxWidth()
         ) {
             if (state.isLoading) {
-                CircularProgressIndicator()
+                CircularProgressIndicator(modifier = Modifier.size(24.dp))
             } else {
-                Text(if (modelMode == ModelMode.Mock) "生成演示内容" else "调用模型生成")
+                val text = when {
+                    state.selectedScenario == CreationScenario.ImageGeneration -> "生成图片"
+                    modelMode == ModelMode.Mock -> "生成演示内容"
+                    else -> "调用模型生成"
+                }
+                Text(text)
             }
         }
 
@@ -254,15 +283,27 @@ fun CreateScreen(
                     modifier = Modifier.padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Text("创作结果", style = MaterialTheme.typography.titleMedium)
-                    Text(result.scenario.displayName, style = MaterialTheme.typography.bodyMedium)
-                    Text(result.content)
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Button(
+                    if (result.contentType == HistoryContentType.IMAGE) {
+                        Text("图片生成结果", style = MaterialTheme.typography.titleMedium)
+                        Text(result.scenario.displayName, style = MaterialTheme.typography.bodyMedium)
+                        ImagePreview(uriText = result.imagePreviewUri)
+                        Text(result.content)
+                        Row(
                             modifier = Modifier.fillMaxWidth(),
-                            onClick = onEdit
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Text("编辑")
+                            OutlinedButton(
+                                modifier = Modifier.weight(1f),
+                                onClick = onShare
+                            ) {
+                                Text("分享图片")
+                            }
+                            OutlinedButton(
+                                modifier = Modifier.weight(1f),
+                                onClick = onSaveImage
+                            ) {
+                                Text("保存到相册")
+                            }
                         }
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -272,24 +313,111 @@ fun CreateScreen(
                                 modifier = Modifier.weight(1f),
                                 onClick = onFavorite
                             ) {
-                                Text("收藏")
+                                Text(if (isCurrentResultFavorite) "取消收藏" else "收藏")
                             }
                             OutlinedButton(
                                 modifier = Modifier.weight(1f),
-                                onClick = onShare
+                                onClick = onGenerate,
+                                enabled = !state.isLoading
                             ) {
-                                Text("分享")
+                                Text("重新生成")
                             }
-                            OutlinedButton(
-                                modifier = Modifier.weight(1f),
-                                onClick = onCopyResult
+                        }
+                        Text("已保存到历史", style = MaterialTheme.typography.bodySmall)
+                    } else {
+                        Text("创作结果", style = MaterialTheme.typography.titleMedium)
+                        Text(result.scenario.displayName, style = MaterialTheme.typography.bodyMedium)
+                        Text(result.content)
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Button(
+                                modifier = Modifier.fillMaxWidth(),
+                                onClick = onEdit
                             ) {
-                                Text("复制")
+                                Text("编辑")
+                            }
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                OutlinedButton(
+                                    modifier = Modifier.weight(1f),
+                                    onClick = onFavorite
+                                ) {
+                                    Text(if (isCurrentResultFavorite) "取消收藏" else "收藏")
+                                }
+                                OutlinedButton(
+                                    modifier = Modifier.weight(1f),
+                                    onClick = onShare
+                                ) {
+                                    Text("分享")
+                                }
+                                OutlinedButton(
+                                    modifier = Modifier.weight(1f),
+                                    onClick = onCopyResult
+                                ) {
+                                    Text("复制")
+                                }
                             }
                         }
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun ImageGenerationOptions(
+    state: CreateUiState,
+    onInputChanged: (String) -> Unit,
+    onImageGenerationStyleSelected: (ImageGenerationStyle) -> Unit,
+    onImageAspectRatioSelected: (ImageAspectRatio) -> Unit
+) {
+    ImageSection(title = "图片生成") {
+        OutlinedTextField(
+            modifier = Modifier.fillMaxWidth(),
+            value = state.input,
+            onValueChange = onInputChanged,
+            label = { Text("描述你想生成的图片") },
+            placeholder = { Text("例如：一只坐在窗边看雨的橘猫，温暖插画风") },
+            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+            minLines = 3
+        )
+
+        Text("图片风格", style = MaterialTheme.typography.titleSmall)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            ImageGenerationStyle.entries.forEach { style ->
+                FilterChip(
+                    selected = state.imageGenerationStyle == style,
+                    onClick = { onImageGenerationStyleSelected(style) },
+                    label = { Text(style.displayName) }
+                )
+            }
+        }
+
+        Text("画幅比例", style = MaterialTheme.typography.titleSmall)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            ImageAspectRatio.entries.forEach { ratio ->
+                FilterChip(
+                    selected = state.imageAspectRatio == ratio,
+                    onClick = { onImageAspectRatioSelected(ratio) },
+                    label = { Text(ratio.displayName) }
+                )
+            }
+        }
+
+        state.imageUploadNotice?.let { notice ->
+            Text(notice, color = MaterialTheme.colorScheme.primary)
         }
     }
 }
@@ -378,10 +506,18 @@ private fun TextCreationOptions(
 }
 
 @Composable
-private fun ModeNotice(modelMode: ModelMode, hasApiKey: Boolean) {
+private fun ModeNotice(
+    modelMode: ModelMode,
+    hasApiKey: Boolean,
+    scenario: CreationScenario
+) {
     val notice = when {
+        modelMode == ModelMode.Mock && scenario == CreationScenario.ImageGeneration ->
+            "当前为演示模式，生成本地占位图，不调用真实模型。"
+
         modelMode == ModelMode.Mock -> "演示模式：本地生成，不上传内容。"
         !hasApiKey -> "未配置密钥：请先在设置页配置密钥。"
+        scenario == CreationScenario.ImageGeneration -> "当前为真实模式，将调用当前图片生成模型。"
         else -> "真实模式：调用当前模型配置。"
     }
     Card(modifier = Modifier.fillMaxWidth()) {

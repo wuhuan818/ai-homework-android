@@ -305,3 +305,62 @@ AI risk notes:
 - Real model style recommendation and rewrite quality depends on the configured endpoint and model behavior.
 - Multi-version output is prompt-guided, so some providers may vary the exact formatting.
 - The stage intentionally avoids image generation, image editing expansion, account features, cloud sync, and model benchmarking.
+
+## 2026-07-04 - Stage 13 Image Generation And Work Management
+
+Human raised:
+
+- Frontend experience checks are completed by the user, not delegated to Codex.
+- `清空历史` at the bottom is unreasonable when there are many history works.
+- Edit-page rewrite can overwrite the original text and needs a prompt or restore ability.
+- The current phase should moderately add functionality.
+- The user has prepared an image generation interface and plans to connect `qwen-image-2.0-pro`.
+- This phase should only build minimal text-to-image, not a complex image workstation.
+- Project direction and next-stage planning are handled by the user and ChatGPT; Codex should not output project suggestions.
+
+Codex generated or modified:
+
+- A separate `图片生成` creation scene with prompt input, image style selection, aspect ratio selection, generate status, preview, share, favorite, history save, and regenerate.
+- Mock and Real image generation clients, keeping image-generation API requests out of UI code.
+- History metadata and UI support for both text works and image works.
+- Generated-image file storage in app-private `files/generated_images/` with FileProvider sharing.
+- Top-position clear-history action and lightweight storage status text.
+- Edit-page rewrite restore using `previousEditText` kept only in the current edit session.
+- README and decision notes documenting that history metadata is encrypted while generated image files are app-private but not claimed as encrypted binary data.
+
+Human verification points:
+
+- Test Mock image generation with prompt, style, ratio, share, favorite, history, favorites filter, and delete.
+- Test Real image generation with `qwen-image-2.0-pro`, including share, favorite, history, and delete.
+- Confirm text generation, style recommendation, multi-version generation, edit rewrite, image description, sample image, rotation, watermark, restore original, and sharing still work.
+- Confirm clear history is easy to find near the top and still requires confirmation.
+- Confirm rewrite failure does not overwrite the current text and successful rewrite can restore the previous text before saving.
+
+AI risk notes:
+
+- Compatible image generation providers may vary response formats, so the current client supports common `data[0].b64_json` and `data[0].url` shapes.
+- Generated image binaries are app-private files, not encrypted blobs; documentation must remain honest about that boundary.
+- Real-device testing is still required for visual layout, image preview, share sheet behavior, and provider-specific image generation behavior.
+
+## 2026-07-04 - Stage 13.1 Qwen-Image Official API Adaptation
+
+Human raised:
+
+- Mock image generation and the image history chain are basically complete.
+- Real image generation failed in testing.
+- The failure looked like the service provider interface did not match `/images/generations`.
+- This stage should focus only on Qwen-Image official image generation API adaptation.
+- Frontend experience judgment remains with the user; Codex handles implementation and objective reporting.
+
+Codex generated or modified:
+
+- Profile-level image generation API type with `Qwen-Image 官方接口` and `OpenAI-compatible 图片接口`.
+- Profile-level image generation endpoint field for full Qwen-Image text-to-image service addresses.
+- Real image generation request bodies for Qwen-Image official synchronous HTTP and OpenAI-compatible images.
+- Response parsing for `data[0].b64_json`, `data[0].url`, `output.choices[0].message.content[].image`, and `output.results[0].url`.
+
+Human verification points:
+
+- Select Qwen-Image official interface, fill the full image generation endpoint, save settings and key, then test Real image generation.
+- Confirm generated remote URLs are downloaded into local app-private files before preview, history, sharing, favorite, and delete.
+- Re-test Mock image generation, text generation, style recommendation, multi-version generation, edit rewrite and restore, image description, and history.

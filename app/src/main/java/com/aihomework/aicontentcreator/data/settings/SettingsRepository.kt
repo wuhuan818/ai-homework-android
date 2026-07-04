@@ -39,6 +39,22 @@ class SettingsRepository(context: Context) {
                     defaultProfile.visionModel,
                     KEY_VISION_MODEL
                 ),
+                imageGenerationModel = loadProfileValue(
+                    defaultProfile.id,
+                    PROFILE_IMAGE_GENERATION_MODEL,
+                    defaultProfile.imageGenerationModel,
+                    KEY_IMAGE_GENERATION_MODEL
+                ),
+                imageGenerationEndpoint = loadProfileValue(
+                    defaultProfile.id,
+                    PROFILE_IMAGE_GENERATION_ENDPOINT,
+                    defaultProfile.imageGenerationEndpoint,
+                    KEY_IMAGE_GENERATION_ENDPOINT
+                ),
+                imageGenerationApiType = loadImageGenerationApiType(
+                    defaultProfile.id,
+                    defaultProfile.imageGenerationApiType
+                ),
                 hasApiKey = hasEncryptedApiKey(defaultProfile.id)
             )
         }
@@ -67,6 +83,18 @@ class SettingsRepository(context: Context) {
                 .putString(profileKey(profile.id, PROFILE_BASE_URL), profile.baseUrl.trim())
                 .putString(profileKey(profile.id, PROFILE_TEXT_MODEL), profile.textModel.trim())
                 .putString(profileKey(profile.id, PROFILE_VISION_MODEL), profile.visionModel.trim())
+                .putString(
+                    profileKey(profile.id, PROFILE_IMAGE_GENERATION_MODEL),
+                    profile.imageGenerationModel.trim()
+                )
+                .putString(
+                    profileKey(profile.id, PROFILE_IMAGE_GENERATION_ENDPOINT),
+                    profile.imageGenerationEndpoint.trim()
+                )
+                .putString(
+                    profileKey(profile.id, PROFILE_IMAGE_GENERATION_API_TYPE),
+                    profile.imageGenerationApiType.name
+                )
         }
         editor.apply()
     }
@@ -139,6 +167,21 @@ class SettingsRepository(context: Context) {
             ?: defaultValue
     }
 
+    private fun loadImageGenerationApiType(
+        profileId: String,
+        defaultValue: ImageGenerationApiType
+    ): ImageGenerationApiType {
+        val value = prefs.getString(profileKey(profileId, PROFILE_IMAGE_GENERATION_API_TYPE), null)
+            ?: if (profileId == AppSettings.DEFAULT_PROFILE_ID) {
+                prefs.getString(KEY_IMAGE_GENERATION_API_TYPE, defaultValue.name)
+            } else {
+                defaultValue.name
+            }
+        return runCatching {
+            ImageGenerationApiType.valueOf(value ?: defaultValue.name)
+        }.getOrDefault(defaultValue)
+    }
+
     private fun hasEncryptedApiKey(profileId: String): Boolean {
         val hasProfileKey = prefs.contains(apiKeyCipherTextKey(profileId)) &&
             prefs.contains(apiKeyIvKey(profileId))
@@ -177,12 +220,18 @@ class SettingsRepository(context: Context) {
         const val KEY_BASE_URL = "base_url"
         const val KEY_TEXT_MODEL = "text_model"
         const val KEY_VISION_MODEL = "vision_model"
+        const val KEY_IMAGE_GENERATION_MODEL = "image_generation_model"
+        const val KEY_IMAGE_GENERATION_ENDPOINT = "image_generation_endpoint"
+        const val KEY_IMAGE_GENERATION_API_TYPE = "image_generation_api_type"
         const val KEY_API_KEY_CIPHER_TEXT = "api_key_cipher_text"
         const val KEY_API_KEY_IV = "api_key_iv"
         const val PROFILE_NAME = "name"
         const val PROFILE_BASE_URL = "base_url"
         const val PROFILE_TEXT_MODEL = "text_model"
         const val PROFILE_VISION_MODEL = "vision_model"
+        const val PROFILE_IMAGE_GENERATION_MODEL = "image_generation_model"
+        const val PROFILE_IMAGE_GENERATION_ENDPOINT = "image_generation_endpoint"
+        const val PROFILE_IMAGE_GENERATION_API_TYPE = "image_generation_api_type"
 
         fun profileKey(profileId: String, field: String): String {
             return "profile_${profileId}_$field"

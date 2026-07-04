@@ -25,6 +25,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.aihomework.aicontentcreator.data.settings.AppSettings
+import com.aihomework.aicontentcreator.data.settings.ImageGenerationApiType
 import com.aihomework.aicontentcreator.data.settings.ModelMode
 
 @Composable
@@ -40,6 +41,9 @@ fun SettingsScreen(
     onBaseUrlChanged: (String) -> Unit,
     onTextModelChanged: (String) -> Unit,
     onVisionModelChanged: (String) -> Unit,
+    onImageGenerationModelChanged: (String) -> Unit,
+    onImageGenerationEndpointChanged: (String) -> Unit,
+    onImageGenerationApiTypeChanged: (ImageGenerationApiType) -> Unit,
     onApiKeyInputChanged: (String) -> Unit,
     onSaveSettings: () -> Unit,
     onSaveApiKey: () -> Unit,
@@ -127,8 +131,40 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth(),
                 value = settings.visionModel,
                 onValueChange = onVisionModelChanged,
-                label = { Text("图像模型（Vision Model）") },
+                label = { Text("图像模型（用于图片描述 / 看图理解）") },
                 singleLine = true
+            )
+            OutlinedTextField(
+                modifier = Modifier.fillMaxWidth(),
+                value = settings.imageGenerationModel,
+                onValueChange = onImageGenerationModelChanged,
+                label = { Text("图片生成模型（用于根据文字生成图片）") },
+                singleLine = true
+            )
+            Text("图片生成接口类型", style = MaterialTheme.typography.titleSmall)
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                ImageGenerationApiType.entries.forEach { apiType ->
+                    FilterChip(
+                        modifier = Modifier.fillMaxWidth(),
+                        selected = settings.imageGenerationApiType == apiType,
+                        onClick = { onImageGenerationApiTypeChanged(apiType) },
+                        label = { Text(apiType.displayName) }
+                    )
+                }
+            }
+            OutlinedTextField(
+                modifier = Modifier.fillMaxWidth(),
+                value = settings.imageGenerationEndpoint,
+                onValueChange = onImageGenerationEndpointChanged,
+                label = { Text("图片生成接口地址") },
+                placeholder = {
+                    Text("例如：https://{WorkspaceId}.ap-southeast-1.maas.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation")
+                },
+                minLines = 2
+            )
+            Text(
+                text = "图片生成接口可与文本接口不同；Qwen-Image 官方接口请填写完整文生图接口地址。",
+                style = MaterialTheme.typography.bodySmall
             )
 
             OutlinedTextField(

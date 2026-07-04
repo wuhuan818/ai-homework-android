@@ -224,6 +224,9 @@ class RealModelClient(
 
             CreationScenario.ImageDescription ->
                 imagePromptFor(request, hasRealImage = request.imageUri != null)
+
+            CreationScenario.ImageGeneration ->
+                throw ModelClientException("图片生成请使用独立图片生成接口。")
         }
     }
 
@@ -276,6 +279,7 @@ class RealModelClient(
             CreationScenario.Moments -> "朋友圈文案"
             CreationScenario.Product -> "商品文案"
             CreationScenario.ImageDescription -> "文字创作"
+            CreationScenario.ImageGeneration -> "图片生成"
         }
         return """
             请为一段${sceneName}输入推荐 2 到 3 个合适的创作风格。

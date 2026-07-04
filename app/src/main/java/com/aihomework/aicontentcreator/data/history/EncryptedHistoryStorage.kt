@@ -4,6 +4,9 @@ import android.content.Context
 import android.content.SharedPreferences
 import com.aihomework.aicontentcreator.data.model.CreationScenario
 import com.aihomework.aicontentcreator.data.model.HistoryItem
+import com.aihomework.aicontentcreator.data.model.HistoryContentType
+import com.aihomework.aicontentcreator.data.model.ImageAspectRatio
+import com.aihomework.aicontentcreator.data.model.ImageGenerationStyle
 import com.aihomework.aicontentcreator.data.security.CryptoManager
 import com.aihomework.aicontentcreator.data.security.EncryptedPayload
 import org.json.JSONArray
@@ -78,6 +81,11 @@ class EncryptedHistoryStorage(
                     .put("content", item.content)
                     .put("createdAtMillis", item.createdAtMillis)
                     .put("isFavorite", item.isFavorite)
+                    .put("contentType", item.contentType.name)
+                    .put("imageFileName", item.imageFileName)
+                    .put("imageGenerationStyle", item.imageGenerationStyle?.name)
+                    .put("imageAspectRatio", item.imageAspectRatio?.name)
+                    .put("isMockImage", item.isMockImage)
             )
         }
         return JSONObject()
@@ -97,9 +105,28 @@ class EncryptedHistoryStorage(
                 input = item.optString("input"),
                 content = item.optString("content"),
                 createdAtMillis = item.getLong("createdAtMillis"),
-                isFavorite = item.optBoolean("isFavorite", false)
+                isFavorite = item.optBoolean("isFavorite", false),
+                contentType = item.optEnum("contentType", HistoryContentType.TEXT),
+                imageFileName = item.optNullableString("imageFileName"),
+                imageGenerationStyle = item.optNullableEnum<ImageGenerationStyle>("imageGenerationStyle"),
+                imageAspectRatio = item.optNullableEnum<ImageAspectRatio>("imageAspectRatio"),
+                isMockImage = item.optBoolean("isMockImage", false)
             )
         }
+    }
+
+    private inline fun <reified T : Enum<T>> JSONObject.optEnum(key: String, fallback: T): T {
+        return optNullableEnum<T>(key) ?: fallback
+    }
+
+    private inline fun <reified T : Enum<T>> JSONObject.optNullableEnum(key: String): T? {
+        val value = optNullableString(key) ?: return null
+        return enumValues<T>().firstOrNull { it.name == value }
+    }
+
+    private fun JSONObject.optNullableString(key: String): String? {
+        if (!has(key) || isNull(key)) return null
+        return optString(key).takeIf { it.isNotBlank() }
     }
 
     private companion object {

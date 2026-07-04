@@ -28,22 +28,32 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import com.aihomework.aicontentcreator.data.ai.MockModelClient
+import com.aihomework.aicontentcreator.data.ai.MockImageGenerationClient
 import com.aihomework.aicontentcreator.data.ai.ModelClientException
+import com.aihomework.aicontentcreator.data.ai.RealImageGenerationClient
 import com.aihomework.aicontentcreator.data.ai.RealModelClient
 import com.aihomework.aicontentcreator.data.history.HistoryStorageStatus
+import com.aihomework.aicontentcreator.data.image.GeneratedImageFileStore
 import com.aihomework.aicontentcreator.data.image.ImageProcessor
 import com.aihomework.aicontentcreator.data.model.CreationRequest
 import com.aihomework.aicontentcreator.data.model.CreationResult
+import com.aihomework.aicontentcreator.data.model.CreationScenario
+import com.aihomework.aicontentcreator.data.model.HistoryContentType
 import com.aihomework.aicontentcreator.data.model.HistoryItem
+import com.aihomework.aicontentcreator.data.model.ImageAspectRatio
+import com.aihomework.aicontentcreator.data.model.ImageGenerationResult
+import com.aihomework.aicontentcreator.data.model.ImageGenerationStyle
 import com.aihomework.aicontentcreator.data.model.TextCreationStyle
 import com.aihomework.aicontentcreator.data.repository.CreationRepository
 import com.aihomework.aicontentcreator.data.repository.HistoryRepository
+import com.aihomework.aicontentcreator.data.settings.ImageGenerationApiType
 import com.aihomework.aicontentcreator.data.settings.ModelMode
 import com.aihomework.aicontentcreator.data.settings.SettingsRepository
 import com.aihomework.aicontentcreator.ui.CreateScreen
 import com.aihomework.aicontentcreator.ui.EditScreen
 import com.aihomework.aicontentcreator.ui.HistoryScreen
 import com.aihomework.aicontentcreator.ui.SettingsScreen
+import com.aihomework.aicontentcreator.ui.saveImageToGallery
 import com.aihomework.aicontentcreator.ui.shareImage
 import com.aihomework.aicontentcreator.ui.shareText
 import com.aihomework.aicontentcreator.ui.state.CreateUiState
@@ -77,6 +87,7 @@ private fun AIContentCreatorApp() {
     val settingsRepository = remember { SettingsRepository(appContext) }
     val historyRepository = remember { HistoryRepository(appContext) }
     val imageProcessor = remember { ImageProcessor(appContext) }
+    val generatedImageFileStore = remember { GeneratedImageFileStore(appContext) }
     val historyItems by historyRepository.items.collectAsState()
     val historyStorageStatus by historyRepository.status.collectAsState()
 
@@ -146,6 +157,12 @@ private fun AIContentCreatorApp() {
                             },
                             onImageDescriptionStyleSelected = { style ->
                                 createState = createState.copy(imageDescriptionStyle = style)
+                            },
+                            onImageGenerationStyleSelected = { style ->
+                                createState = createState.copy(imageGenerationStyle = style)
+                            },
+                            onImageAspectRatioSelected = { ratio ->
+                                createState = createState.copy(imageAspectRatio = ratio)
                             },
                             onTextStyleSelected = { style ->
                                 createState = createState.copy(textStyle = style)
@@ -337,6 +354,64 @@ private fun AIContentCreatorApp() {
                                 }
                             },
                             onGenerate = {
+                                if (createState.selectedScenario == CreationScenario.ImageGeneration) {
+                                    val prompt = createState.input.trim()
+                                    if (prompt.isBlank()) {
+                                        createState = createState.copy(
+                                            imageUploadNotice = "请先输入图片描述。",
+                                            message = "请先输入图片描述。"
+                                        )
+                                        return@CreateScreen
+                                    }
+                                    scope.launch {
+                                        createState = createState.copy(
+                                            isLoading = true,
+                                            result = null,
+                                            imageUploadNotice = "正在生成图片...",
+                                            message = null
+                                        )
+                                        try {
+                                            val client = if (settings.mode == ModelMode.Mock) {
+                                                MockImageGenerationClient(appContext)
+                                            } else {
+                                                RealImageGenerationClient(appContext, settings) {
+                                                    settingsRepository.getApiKey(settings.activeProfile.id)
+                                                }
+                                            }
+                                            val imageResult = client.generateImage(
+                                                prompt = prompt,
+                                                style = createState.imageGenerationStyle,
+                                                aspectRatio = createState.imageAspectRatio
+                                            )
+                                            val result = imageResult.toCreationResult()
+                                            historyRepository.addResult(result)
+                                            createState = createState.copy(
+                                                isLoading = false,
+                                                result = result,
+                                                imageUploadNotice = if (imageResult.isMock) {
+                                                    "当前为演示模式，生成本地占位图，不调用真实模型。"
+                                                } else {
+                                                    "图片生成完成。"
+                                                },
+                                                message = "图片生成完成。"
+                                            )
+                                        } catch (error: ModelClientException) {
+                                            createState = createState.copy(
+                                                isLoading = false,
+                                                imageUploadNotice = error.userMessage,
+                                                message = error.userMessage
+                                            )
+                                        } catch (error: Exception) {
+                                            createState = createState.copy(
+                                                isLoading = false,
+                                                imageUploadNotice = "图片生成失败，请稍后重试。",
+                                                message = "图片生成失败，请稍后重试。"
+                                            )
+                                        }
+                                    }
+                                    return@CreateScreen
+                                }
+
                                 val input = createState.input.trim()
                                 val imageUri = createState.processedImageUri ?: createState.selectedImageUri
                                 val hasImage = imageUri != null
@@ -394,6 +469,8 @@ private fun AIContentCreatorApp() {
                                 val result = createState.result
                                 if (result == null) {
                                     createState = createState.copy(message = "暂无可编辑内容。")
+                                } else if (result.contentType == HistoryContentType.IMAGE) {
+                                    createState = createState.copy(message = "图片作品暂不进入文本编辑页。")
                                 } else {
                                     editState = result.toEditState()
                                     selectedTab = AppTab.Edit
@@ -409,11 +486,37 @@ private fun AIContentCreatorApp() {
                                 }
                             },
                             onShare = {
-                                val text = createState.result?.content.orEmpty()
-                                if (text.isBlank()) {
+                                val result = createState.result
+                                if (result == null) {
                                     createState = createState.copy(message = "暂无可分享内容。")
+                                } else if (result.contentType == HistoryContentType.IMAGE) {
+                                    val uri = result.imagePreviewUri
+                                    if (uri.isNullOrBlank()) {
+                                        createState = createState.copy(message = "暂无可分享图片。")
+                                    } else {
+                                        runCatching { shareImage(context, uri) }
+                                            .onFailure {
+                                                createState = createState.copy(message = "图片分享失败，请稍后重试。")
+                                            }
+                                    }
                                 } else {
-                                    shareText(context, text)
+                                    val text = result.content
+                                    if (text.isBlank()) {
+                                        createState = createState.copy(message = "暂无可分享内容。")
+                                    } else {
+                                        shareText(context, text)
+                                    }
+                                }
+                            },
+                            onSaveImage = {
+                                val uri = createState.result?.imagePreviewUri
+                                if (uri.isNullOrBlank()) {
+                                    createState = createState.copy(message = "暂无可保存图片。")
+                                } else {
+                                    val errorMessage = saveImageToGallery(context, uri)
+                                    createState = createState.copy(
+                                        message = errorMessage ?: "图片已保存到相册。"
+                                    )
                                 }
                             },
                             onCopyResult = {
@@ -430,7 +533,10 @@ private fun AIContentCreatorApp() {
                             },
                             onMessageShown = {
                                 createState = createState.copy(message = null)
-                            }
+                            },
+                            isCurrentResultFavorite = createState.result?.let { result ->
+                                historyItems.firstOrNull { it.id == result.id }?.isFavorite
+                            } ?: false
                         )
 
                         AppTab.Edit -> EditScreen(
@@ -443,7 +549,11 @@ private fun AIContentCreatorApp() {
                                 } else {
                                     historyRepository.updateContent(id, editState.text)
                                     createState = createState.updateResultText(id, editState.text)
-                                    editState = editState.copy(message = "修改已保存。")
+                                    editState = editState.copy(
+                                        previousEditText = null,
+                                        rewriteMessage = null,
+                                        message = "修改已保存。"
+                                    )
                                     selectedTab = AppTab.Create
                                 }
                             },
@@ -456,7 +566,9 @@ private fun AIContentCreatorApp() {
                                     return@EditScreen
                                 }
                                 scope.launch {
+                                    val previousText = editState.text
                                     editState = editState.copy(
+                                        previousEditText = previousText,
                                         isRewriting = true,
                                         rewriteMessage = "正在改写...",
                                         message = null
@@ -476,21 +588,33 @@ private fun AIContentCreatorApp() {
                                         editState = editState.copy(
                                             isRewriting = false,
                                             text = rewritten,
-                                            rewriteMessage = "已按“${action.displayName}”改写，保存后会更新历史。"
+                                            rewriteMessage = "已完成改写，原文可恢复。"
                                         )
                                     } catch (error: ModelClientException) {
                                         editState = editState.copy(
                                             isRewriting = false,
+                                            previousEditText = null,
                                             rewriteMessage = error.userMessage,
                                             message = error.userMessage
                                         )
                                     } catch (error: Exception) {
                                         editState = editState.copy(
                                             isRewriting = false,
+                                            previousEditText = null,
                                             rewriteMessage = "改写失败，请稍后重试。",
                                             message = "改写失败，请稍后重试。"
                                         )
                                     }
+                                }
+                            },
+                            onRestorePreviousEdit = {
+                                val previous = editState.previousEditText
+                                if (previous != null) {
+                                    editState = editState.copy(
+                                        text = previous,
+                                        previousEditText = null,
+                                        rewriteMessage = "已恢复改写前内容。"
+                                    )
                                 }
                             },
                             onConvertMarkdown = {
@@ -537,6 +661,26 @@ private fun AIContentCreatorApp() {
                             onToggleFavorite = { id ->
                                 historyRepository.toggleFavorite(id)
                             },
+                            onShareImage = { item ->
+                                val uri = generatedImageFileStore.uriFor(item.imageFileName)
+                                if (uri == null) {
+                                    "图片文件不可用，无法分享。"
+                                } else {
+                                    runCatching { shareImage(context, uri.toString()) }
+                                        .fold(
+                                            onSuccess = { null },
+                                            onFailure = { "图片分享失败，请稍后重试。" }
+                                        )
+                                }
+                            },
+                            onSaveImage = { item ->
+                                val uri = generatedImageFileStore.uriFor(item.imageFileName)
+                                if (uri == null) {
+                                    "图片文件不可用，无法保存。"
+                                } else {
+                                    saveImageToGallery(context, uri.toString())
+                                }
+                            },
                             onDeleteItem = { id ->
                                 historyRepository.deleteItem(id.toString())
                             },
@@ -581,6 +725,24 @@ private fun AIContentCreatorApp() {
                             },
                             onVisionModelChanged = { visionModel ->
                                 settings = settings.updateActiveProfile { it.copy(visionModel = visionModel) }
+                                textModelTestResult = null
+                            },
+                            onImageGenerationModelChanged = { imageGenerationModel ->
+                                settings = settings.updateActiveProfile {
+                                    it.copy(imageGenerationModel = imageGenerationModel)
+                                }
+                                textModelTestResult = null
+                            },
+                            onImageGenerationEndpointChanged = { endpoint ->
+                                settings = settings.updateActiveProfile {
+                                    it.copy(imageGenerationEndpoint = endpoint)
+                                }
+                                textModelTestResult = null
+                            },
+                            onImageGenerationApiTypeChanged = { apiType: ImageGenerationApiType ->
+                                settings = settings.updateActiveProfile {
+                                    it.copy(imageGenerationApiType = apiType)
+                                }
                                 textModelTestResult = null
                             },
                             onApiKeyInputChanged = { apiKeyInput = it },
@@ -640,6 +802,30 @@ private fun CreationResult.toEditState(): EditUiState {
         itemId = id,
         scenario = scenario,
         text = content
+    )
+}
+
+private fun ImageGenerationResult.toCreationResult(): CreationResult {
+    val content = buildString {
+        if (isMock) {
+            appendLine("【演示模式生成】")
+        }
+        appendLine("风格：${style.displayName}")
+        appendLine("比例：${aspectRatio.displayName}")
+        append("提示词摘要：${prompt.take(120)}")
+    }
+    return CreationResult(
+        id = id,
+        scenario = CreationScenario.ImageGeneration,
+        originalInput = prompt,
+        content = content,
+        createdAtMillis = createdAtMillis,
+        contentType = HistoryContentType.IMAGE,
+        imageFileName = imageFileName,
+        imagePreviewUri = previewUri,
+        imageGenerationStyle = style,
+        imageAspectRatio = aspectRatio,
+        isMockImage = isMock
     )
 }
 

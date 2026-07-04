@@ -6,6 +6,7 @@ data class EditUiState(
     val itemId: Long? = null,
     val scenario: CreationScenario? = null,
     val text: String = "",
+    val previousEditText: String? = null,
     val isRewriting: Boolean = false,
     val rewriteMessage: String? = null,
     val message: String? = null

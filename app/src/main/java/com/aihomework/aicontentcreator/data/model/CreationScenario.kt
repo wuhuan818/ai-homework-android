@@ -19,5 +19,10 @@ enum class CreationScenario(
         displayName = "图片描述",
         description = "根据图片或图片线索生成适合发布的中文描述。",
         inputHint = "例如：一张城市夜景照片，或点击使用示例图片"
+    ),
+    ImageGeneration(
+        displayName = "图片生成",
+        description = "根据文字提示生成一张图片。",
+        inputHint = "例如：一只坐在窗边看雨的橘猫，温暖插画风"
     )
 }

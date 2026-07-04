@@ -32,6 +32,7 @@ fun EditScreen(
     onTextChanged: (String) -> Unit,
     onSave: () -> Unit,
     onRewrite: (RewriteAction) -> Unit,
+    onRestorePreviousEdit: () -> Unit,
     onConvertMarkdown: () -> Unit,
     onConvertPlainText: () -> Unit,
     onShare: () -> Unit,
@@ -101,6 +102,14 @@ fun EditScreen(
                 }
                 state.rewriteMessage?.let { message ->
                     Text(message, color = MaterialTheme.colorScheme.primary)
+                }
+                if (state.previousEditText != null) {
+                    OutlinedButton(
+                        onClick = onRestorePreviousEdit,
+                        enabled = !state.isRewriting
+                    ) {
+                        Text("恢复改写前内容")
+                    }
                 }
             }
         }

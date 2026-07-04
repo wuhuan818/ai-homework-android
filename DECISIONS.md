@@ -78,3 +78,19 @@
 - Add optional 3-version generation so users can compare expression angles without introducing model scoring, speed tests, rankings, or multi-model comparison.
 - Add lightweight rewrite actions in the Edit page so generated text can be refined in place before the user decides to save.
 - Continue to exclude image generation because the current product line remains writing, image description, and basic local image handling.
+
+## Stage 13 Image Generation And Work Management
+
+- Add a separate minimal `图片生成` scene because the user has prepared a text-to-image interface and the product now needs moderate media creation support.
+- Keep image generation to one text prompt, one style, one aspect ratio, and one result; do not add image-to-image, inpaint, multi-image generation, negative prompts, advanced sampler parameters, ranking, scoring, or speed tests.
+- Store the image generation model per configuration preset and keep it separate from the Vision model used for image description.
+- Save image work metadata in the existing encrypted history while storing generated image files in app-private `files/generated_images/`.
+- Move `清空历史` to the History top action area so it remains discoverable with long lists.
+- Preserve edit-page rewrite speed while adding a current-session restore path for the pre-rewrite text.
+
+## Stage 13.1 Qwen-Image Official API Adaptation
+
+- Add image generation API type per profile because Qwen-Image official synchronous HTTP and OpenAI-compatible images use different paths and request bodies.
+- Add a separate image generation endpoint because text Base URL and image generation service URL may be different.
+- Keep OpenAI-compatible image generation as an option while making Qwen-Image official the default for `qwen-image-2.0-pro`.
+- Download returned image URLs to app-private files before saving history, sharing, or previewing so remote URLs are not stored in history.

@@ -7,5 +7,7 @@ data class CreationRequest(
     val imageUri: String? = null,
     val imageDescriptionStyle: ImageDescriptionStyle = ImageDescriptionStyle.Objective,
     val textStyle: TextCreationStyle = TextCreationStyle.WarmDaily,
-    val generationCount: Int = 1
+    val generationCount: Int = 1,
+    val imageGenerationStyle: ImageGenerationStyle = ImageGenerationStyle.RealisticPhoto,
+    val imageAspectRatio: ImageAspectRatio = ImageAspectRatio.Square
 )

@@ -23,6 +23,7 @@ enum class TextCreationStyle(
                 CreationScenario.Moments -> WarmDaily
                 CreationScenario.Product -> Recommendation
                 CreationScenario.ImageDescription -> WarmDaily
+                CreationScenario.ImageGeneration -> WarmDaily
             }
         }
 

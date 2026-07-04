@@ -114,3 +114,22 @@
 - Keep history unchanged because saving the final generated text preserves old encrypted history compatibility and avoids a data migration for this stage.
 - Add Edit page rewrite actions so users can continue refining generated content in place; rewrite does not update history until the user taps save.
 - Continue not to implement image generation because this stage is about writing richness, not a new media-generation product surface.
+
+## 2026-07-04 - Stage 13 Image Generation And Work Management
+
+- Add image generation now because the product is moving from text and image understanding into a small, demonstrable media creation workflow.
+- Keep the first image generation step to minimal text-to-image because it fits the existing Create / History / Share model without becoming a complex image workstation.
+- Defer image-to-image, inpaint, multi-image generation, negative prompts, seeds, steps, cfg, samplers, ranking, scoring, speed tests, and model comparison because each would expand UI, storage, provider behavior, and verification scope.
+- Keep image generation model configuration separate from the Vision model because image description and image generation are different provider capabilities and may use different model names.
+- Store image works in History and Favorites because generated images are user works just like generated text, and users need the same retrieval, share, favorite, and delete paths.
+- Move the clear-history action upward because destructive global actions should be visible in the history task area rather than hidden after long lists.
+- Add edit restore instead of only a confirmation dialog because it preserves the fast rewrite workflow while giving users a way back if the new text is worse.
+- Current limitation: generated image files are app-private files and are not encrypted as binary blobs; history metadata remains encrypted, and future work can encrypt image files if storage risk or product requirements justify it.
+
+## 2026-07-04 - Stage 13.1 Qwen-Image Official API Adaptation
+
+- Do not force all image generation providers through `/images/generations` because Qwen-Image official synchronous HTTP uses a different request shape and may require a full service endpoint.
+- Store the image generation endpoint separately from the text Base URL because text/chat, vision understanding, and image generation can live on different service paths or regions.
+- Keep the OpenAI-compatible image interface as an option so existing compatible gateways still work without changing their configuration.
+- Do not implement asynchronous task polling in this stage because `qwen-image-2.0-pro` is being adapted through the recommended synchronous HTTP path for the current test target.
+- Download generated remote URLs into app-private local files before history and sharing so encrypted history stores only metadata and not a remote image URL.

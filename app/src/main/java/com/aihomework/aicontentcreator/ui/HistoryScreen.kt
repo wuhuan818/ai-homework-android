@@ -1,11 +1,19 @@
 package com.aihomework.aicontentcreator.ui
 
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.ImageDecoder
+import android.net.Uri
+import android.os.Build
 import android.widget.Toast
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -24,8 +32,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.aihomework.aicontentcreator.data.image.GeneratedImageFileStore
+import com.aihomework.aicontentcreator.data.model.HistoryContentType
 import com.aihomework.aicontentcreator.data.model.HistoryItem
 import com.aihomework.aicontentcreator.ui.state.HistoryUiState
 import java.text.SimpleDateFormat
@@ -37,6 +49,8 @@ fun HistoryScreen(
     state: HistoryUiState,
     onOpenForEdit: (HistoryItem) -> Unit,
     onToggleFavorite: (Long) -> Unit,
+    onShareImage: (HistoryItem) -> String?,
+    onSaveImage: (HistoryItem) -> String?,
     onDeleteItem: (Long) -> String?,
     onClearHistory: () -> Unit
 ) {
@@ -112,7 +126,18 @@ fun HistoryScreen(
         modifier = Modifier.padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text("历史作品", style = MaterialTheme.typography.headlineSmall)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text("历史作品", style = MaterialTheme.typography.headlineSmall)
+            OutlinedButton(
+                onClick = { showClearConfirmation = true },
+                enabled = state.items.isNotEmpty()
+            ) {
+                Text("清空历史")
+            }
+        }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             HistoryFilter.entries.forEach { filter ->
                 FilterChip(
@@ -122,6 +147,7 @@ fun HistoryScreen(
                 )
             }
         }
+        Text(state.storageStatus, style = MaterialTheme.typography.bodySmall)
         if (state.items.isEmpty()) {
             Text("暂无历史作品，请先在创作页生成内容。")
         } else {
@@ -134,29 +160,21 @@ fun HistoryScreen(
                             item = item,
                             onOpenForEdit = { onOpenForEdit(item) },
                             onToggleFavorite = { onToggleFavorite(item.id) },
+                            onShareImage = {
+                                val errorMessage = onShareImage(item)
+                                if (errorMessage != null) {
+                                    message = errorMessage
+                                }
+                            },
+                            onSaveImage = {
+                                val errorMessage = onSaveImage(item)
+                                message = errorMessage ?: "图片已保存到相册。"
+                            },
                             onDelete = { pendingDeleteItem = item }
                         )
                     }
                 }
             }
-            OutlinedButton(onClick = { showClearConfirmation = true }) {
-                Text("清空历史")
-            }
-        }
-        StorageStatusBlock(state.storageStatus)
-    }
-}
-
-@Composable
-private fun StorageStatusBlock(storageStatus: String) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier.padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            Text("安全提示", style = MaterialTheme.typography.titleMedium)
-            Text("历史作品已本地加密保存")
-            Text(storageStatus)
         }
     }
 }
@@ -166,12 +184,17 @@ private fun HistoryCard(
     item: HistoryItem,
     onOpenForEdit: () -> Unit,
     onToggleFavorite: () -> Unit,
+    onShareImage: () -> Unit,
+    onSaveImage: () -> Unit,
     onDelete: () -> Unit
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onOpenForEdit)
+            .clickable(
+                enabled = item.contentType == HistoryContentType.TEXT,
+                onClick = onOpenForEdit
+            )
     ) {
         Column(
             modifier = Modifier.padding(14.dp),
@@ -184,20 +207,66 @@ private fun HistoryCard(
                 }
             }
             Text(formatTime(item.createdAtMillis), style = MaterialTheme.typography.bodySmall)
-            Text(item.summary)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = onOpenForEdit) {
-                    Text("编辑")
+            if (item.contentType == HistoryContentType.IMAGE) {
+                HistoryImagePreview(fileName = item.imageFileName)
+                Text("风格：${item.imageGenerationStyle?.displayName ?: "未记录"}")
+                Text("比例：${item.imageAspectRatio?.displayName ?: "未记录"}")
+                Text(item.summary, maxLines = 3)
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(onClick = onShareImage) {
+                            Text("分享图片")
+                        }
+                        OutlinedButton(onClick = onSaveImage) {
+                            Text("保存到相册")
+                        }
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedButton(onClick = onToggleFavorite) {
+                            Text(if (item.isFavorite) "取消收藏" else "收藏")
+                        }
+                        OutlinedButton(onClick = onDelete) {
+                            Text("删除")
+                        }
+                    }
                 }
-                OutlinedButton(onClick = onToggleFavorite) {
-                    Text(if (item.isFavorite) "取消收藏" else "收藏")
-                }
-                OutlinedButton(onClick = onDelete) {
-                    Text("删除")
+            } else {
+                Text(item.summary)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(onClick = onOpenForEdit) {
+                        Text("编辑")
+                    }
+                    OutlinedButton(onClick = onToggleFavorite) {
+                        Text(if (item.isFavorite) "取消收藏" else "收藏")
+                    }
+                    OutlinedButton(onClick = onDelete) {
+                        Text("删除")
+                    }
                 }
             }
         }
     }
+}
+
+@Composable
+private fun HistoryImagePreview(fileName: String?) {
+    val context = LocalContext.current
+    val uri = remember(fileName) {
+        GeneratedImageFileStore(context.applicationContext).uriFor(fileName)
+    }
+    val bitmap = remember(uri) {
+        uri?.let { loadHistoryBitmap(context, it) }
+    }
+    bitmap?.let {
+        Image(
+            bitmap = it.asImageBitmap(),
+            contentDescription = "图片作品缩略图",
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(160.dp),
+            contentScale = ContentScale.Fit
+        )
+    } ?: Text("图片文件不可用")
 }
 
 private enum class HistoryFilter(val label: String) {
@@ -207,4 +276,21 @@ private enum class HistoryFilter(val label: String) {
 
 private fun formatTime(timeMillis: Long): String {
     return SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date(timeMillis))
+}
+
+private fun loadHistoryBitmap(context: Context, uri: Uri): Bitmap? {
+    return try {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            val source = ImageDecoder.createSource(context.contentResolver, uri)
+            ImageDecoder.decodeBitmap(source) { decoder, _, _ ->
+                decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
+            }
+        } else {
+            context.contentResolver.openInputStream(uri)?.use { stream ->
+                BitmapFactory.decodeStream(stream)
+            }
+        }
+    } catch (error: Exception) {
+        null
+    }
 }
