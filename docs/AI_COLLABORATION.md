@@ -426,3 +426,37 @@ AI risk notes:
 - Real prompt optimization quality depends on the configured text model.
 - Visual layout still needs user real-device judgment, especially small-screen Chinese wrapping.
 - Gesture crop, free crop, crop preview, and drawing remain intentionally unimplemented.
+
+## 2026-07-04 - Stage 14.4 Creation Structure Polish
+
+Human raised:
+
+- `CreateScreen` 已偏大，长文本和图片描述页面需要上下滑动，影响体验。
+- 优化提示词存在显示不全问题；提示词稍长不是问题，显示不全才是问题。
+- “生成配图”需要增加“整理为图片提示词”的确认步骤。
+- 暂未发现新的按钮换行问题。
+- 历史 / 收藏 / 再次生成链路暂时正常。
+- 手势框选裁剪应作为后续单独阶段。
+
+Codex generated or modified:
+
+- Split Create page UI into scenario selector, text creation panel, image description panel, image processing panel, image generation panel, result card, and image preview components.
+- Added collapsed/expanded scenario entry behavior with a current-scene summary.
+- Added long text result preview with expand/collapse while preserving full-result callbacks for edit, copy, share, favorite, and image prompt handoff.
+- Added expandable original/optimized image prompt display.
+- Added text-result-to-image confirmation with `整理提示词` and `直接使用`, plus Mock and Real text-to-image prompt preparation.
+- Updated README and decision notes for the new creation-page behavior and unchanged crop/drawing boundaries.
+
+Human verification points:
+
+- Check whether the scene selector collapse reduces top scrolling while keeping scene switching clear.
+- Check long text result preview, expand, collapse, and full-content operations.
+- Check optimized prompt candidates can be fully inspected and applied or discarded.
+- Check text result “生成配图” switches to image generation, shows the confirmation group, and never auto-generates an image.
+- Re-test image description, image processing, history, favorites, reuse, regenerate, and settings configuration paths.
+
+AI risk notes:
+
+- Real prompt整理 quality depends on the configured text model.
+- Visual spacing and button wrapping still need user real-device judgment.
+- Gesture crop, deeper center-crop work, drawing, inpaint, image-to-image, and multi-image generation remain intentionally unimplemented.

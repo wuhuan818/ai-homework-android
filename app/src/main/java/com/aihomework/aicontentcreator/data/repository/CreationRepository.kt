@@ -25,4 +25,8 @@ class CreationRepository(
     suspend fun optimizeImagePrompt(input: String): String {
         return modelClient.optimizeImagePrompt(input)
     }
+
+    suspend fun prepareImagePromptFromText(text: String): String {
+        return modelClient.prepareImagePromptFromText(text)
+    }
 }

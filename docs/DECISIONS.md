@@ -153,3 +153,14 @@
 - Let text results become image prompts because generated copy often contains enough scene or product context to start a companion image, and the handoff keeps user control by not auto-generating images.
 - Keep center crop as the existing automatic center-crop action because it is already buildable and useful, while deeper crop work would compete with the higher-priority creation-page layout fixes.
 - Defer gesture crop to a later stage because manual selection needs new interaction design, preview behavior, and real-device validation that are outside this 14-2 pass.
+
+## 2026-07-04 - Stage 14.4 Creation Structure Polish
+
+- Lightly split `CreateScreen` because the page had grown into one large file containing scenario selection, text settings, image description, image generation, image processing, results, and bitmap preview logic.
+- Keep the split at UI component boundaries rather than introducing a full MVVM rewrite because the current state source and callbacks are already working and the stage goal is reviewable structure reduction.
+- Collapse the scenario entry after selection so long text results and image-description flows spend less vertical space on the top selector while keeping a clear `当前创作` summary and `切换` entry.
+- Default long text results to preview with expand/collapse because complete generated copy can be long, but copy, edit, share, favorite, and image-prompt handoff must still use the full stored result.
+- Do not force image prompts to become very short; instead make original and optimized prompts expandable so users can inspect complete useful prompt text without silent truncation.
+- Add a confirmation step before using text results for companion images because product copy or long social text may need to be整理成画面描述 before it is suitable for text-to-image prompting.
+- Add a separate `prepareImagePromptFromText` path instead of changing `optimizeImagePrompt` so the UI can keep `优化提示词` and `整理提示词` as distinct actions.
+- Keep gesture crop for a later stage because manual selection needs dedicated touch interaction, preview behavior, and real-device validation beyond this creation-page polish pass.

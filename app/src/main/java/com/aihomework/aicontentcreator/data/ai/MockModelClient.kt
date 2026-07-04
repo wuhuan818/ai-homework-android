@@ -92,6 +92,29 @@ class MockModelClient : ModelClient {
         return "$cleanInput，$styleHint。"
     }
 
+    override suspend fun prepareImagePromptFromText(text: String): String {
+        delay(450)
+        val cleanText = text.trim()
+        if (cleanText.isBlank()) return cleanText
+        val firstLine = cleanText.lines().firstOrNull { it.isNotBlank() }.orEmpty().take(60)
+        val subject = when {
+            containsAny(cleanText, "杯", "耳机", "灯", "包", "商品", "产品") -> "产品主体"
+            containsAny(cleanText, "咖啡", "旅行", "海", "城市", "夜", "雨") -> "生活场景"
+            containsAny(cleanText, "猫", "狗", "孩子", "朋友", "家人") -> "温暖日常主体"
+            else -> "文字中的核心主体"
+        }
+        val style = when {
+            containsAny(cleanText, "商品", "产品", "卖点", "使用场景") ->
+                "产品展示风格，干净背景，主体突出，质感清晰"
+
+            containsAny(cleanText, "朋友圈", "日常", "温柔", "小确幸") ->
+                "温暖插画风格，柔和光线，生活氛围"
+
+            else -> "写实照片风格，构图清晰，光线自然"
+        }
+        return "$subject，围绕“$firstLine”提炼画面，突出主体、环境和氛围，$style，避免文字促销话术和价格信息。"
+    }
+
     private fun momentsContent(input: String, style: TextCreationStyle, generationCount: Int): String {
         val versions = if (generationCount >= 3) {
             listOf(

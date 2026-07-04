@@ -28,6 +28,10 @@ data class CreateUiState(
     val isOptimizingImagePrompt: Boolean = false,
     val imagePromptOriginal: String? = null,
     val optimizedImagePrompt: String? = null,
+    val showTextToImagePromptCard: Boolean = false,
+    val isPreparingTextToImagePrompt: Boolean = false,
+    val textToImagePromptSource: String? = null,
+    val textToImagePromptCandidate: String? = null,
     val isLoading: Boolean = false,
     val result: CreationResult? = null,
     val message: String? = null

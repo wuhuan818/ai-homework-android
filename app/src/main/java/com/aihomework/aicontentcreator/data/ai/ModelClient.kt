@@ -14,4 +14,6 @@ interface ModelClient {
     suspend fun rewriteText(text: String, action: RewriteAction): String
 
     suspend fun optimizeImagePrompt(input: String): String
+
+    suspend fun prepareImagePromptFromText(text: String): String
 }

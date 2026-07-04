@@ -109,6 +109,21 @@ class RealModelClient(
         )
     }
 
+    override suspend fun prepareImagePromptFromText(text: String): String {
+        validateCommonSettings(text)
+        val apiKey = apiKeyProvider()?.trim()
+        if (apiKey.isNullOrBlank()) {
+            throw ModelClientException("当前配置尚未填写模型密钥，请前往设置页补充。")
+        }
+        return postChatCompletion(
+            apiKey = apiKey,
+            model = settings.textModel.trim(),
+            messages = JSONArray()
+                .put(JSONObject().put("role", "system").put("content", SYSTEM_PROMPT))
+                .put(JSONObject().put("role", "user").put("content", textToImagePrompt(text)))
+        )
+    }
+
     suspend fun testTextConnection() {
         validateCommonSettings("连接测试")
         val apiKey = apiKeyProvider()?.trim()
@@ -340,6 +355,19 @@ class RealModelClient(
 
             原始描述：
             $input
+        """.trimIndent()
+    }
+
+    private fun textToImagePrompt(text: String): String {
+        return """
+            请将以下文本整理成适合文生图模型使用的中文提示词。
+            只输出一段提示词，不要解释。
+            提示词应突出主体、场景、氛围、风格、光线和构图。
+            避免保留促销话术、价格、购买引导等不适合画面生成的内容。
+            不要加入 seed、steps、cfg、sampler 等高级参数。
+
+            原文：
+            $text
         """.trimIndent()
     }
 

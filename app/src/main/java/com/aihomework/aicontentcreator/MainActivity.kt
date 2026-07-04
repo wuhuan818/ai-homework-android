@@ -154,6 +154,10 @@ private fun AIContentCreatorApp() {
                                     isOptimizingImagePrompt = false,
                                     imagePromptOriginal = null,
                                     optimizedImagePrompt = null,
+                                    showTextToImagePromptCard = false,
+                                    isPreparingTextToImagePrompt = false,
+                                    textToImagePromptSource = null,
+                                    textToImagePromptCandidate = null,
                                     result = null,
                                     message = null
                                 )
@@ -230,7 +234,11 @@ private fun AIContentCreatorApp() {
                                     input = it,
                                     styleAdviceMessage = null,
                                     imagePromptOriginal = null,
-                                    optimizedImagePrompt = null
+                                    optimizedImagePrompt = null,
+                                    showTextToImagePromptCard = false,
+                                    isPreparingTextToImagePrompt = false,
+                                    textToImagePromptSource = null,
+                                    textToImagePromptCandidate = null
                                 )
                             },
                             onUseMockImage = {
@@ -498,6 +506,10 @@ private fun AIContentCreatorApp() {
                                     input = example,
                                     imagePromptOriginal = null,
                                     optimizedImagePrompt = null,
+                                    showTextToImagePromptCard = false,
+                                    isPreparingTextToImagePrompt = false,
+                                    textToImagePromptSource = null,
+                                    textToImagePromptCandidate = null,
                                     imageUploadNotice = "已填入示例提示词，请手动生成图片。"
                                 )
                             },
@@ -649,9 +661,82 @@ private fun AIContentCreatorApp() {
                                         isOptimizingImagePrompt = false,
                                         imagePromptOriginal = null,
                                         optimizedImagePrompt = null,
+                                        showTextToImagePromptCard = true,
+                                        isPreparingTextToImagePrompt = false,
+                                        textToImagePromptSource = result.content,
+                                        textToImagePromptCandidate = null,
                                         message = "已切换到图片生成。"
                                     )
                                 }
+                            },
+                            onPrepareTextToImagePrompt = {
+                                val sourceText = createState.textToImagePromptSource
+                                    ?: createState.input
+                                if (sourceText.isBlank()) {
+                                    createState = createState.copy(message = "暂无可整理的文本。")
+                                    return@CreateScreen
+                                }
+                                scope.launch {
+                                    createState = createState.copy(
+                                        isPreparingTextToImagePrompt = true,
+                                        textToImagePromptCandidate = null,
+                                        imageUploadNotice = "正在整理提示词...",
+                                        message = null
+                                    )
+                                    try {
+                                        val client = if (settings.mode == ModelMode.Mock) {
+                                            MockModelClient()
+                                        } else {
+                                            RealModelClient(appContext, settings) {
+                                                settingsRepository.getApiKey(settings.activeProfile.id)
+                                            }
+                                        }
+                                        val prepared = CreationRepository(client).prepareImagePromptFromText(sourceText)
+                                        createState = createState.copy(
+                                            isPreparingTextToImagePrompt = false,
+                                            textToImagePromptCandidate = prepared,
+                                            imageUploadNotice = "已整理提示词，请确认是否应用。"
+                                        )
+                                    } catch (error: ModelClientException) {
+                                        createState = createState.copy(
+                                            isPreparingTextToImagePrompt = false,
+                                            textToImagePromptCandidate = null,
+                                            imageUploadNotice = error.userMessage,
+                                            message = error.userMessage
+                                        )
+                                    } catch (error: Exception) {
+                                        createState = createState.copy(
+                                            isPreparingTextToImagePrompt = false,
+                                            textToImagePromptCandidate = null,
+                                            imageUploadNotice = "整理提示词失败，请稍后重试。",
+                                            message = "整理提示词失败，请稍后重试。"
+                                        )
+                                    }
+                                }
+                            },
+                            onApplyTextToImagePrompt = {
+                                val candidate = createState.textToImagePromptCandidate
+                                if (candidate.isNullOrBlank()) {
+                                    createState = createState.copy(message = "暂无可应用的整理结果。")
+                                } else {
+                                    createState = createState.copy(
+                                        input = candidate,
+                                        showTextToImagePromptCard = false,
+                                        isPreparingTextToImagePrompt = false,
+                                        textToImagePromptSource = null,
+                                        textToImagePromptCandidate = null,
+                                        imageUploadNotice = "已应用整理提示词，请手动生成图片。"
+                                    )
+                                }
+                            },
+                            onUseOriginalTextToImagePrompt = {
+                                createState = createState.copy(
+                                    showTextToImagePromptCard = false,
+                                    isPreparingTextToImagePrompt = false,
+                                    textToImagePromptSource = null,
+                                    textToImagePromptCandidate = null,
+                                    imageUploadNotice = "已直接使用原文，请手动生成图片。"
+                                )
                             },
                             onFavorite = {
                                 val result = createState.result
@@ -887,6 +972,13 @@ private fun AIContentCreatorApp() {
                                     styleAdvice = emptyList(),
                                     styleAdviceMessage = null,
                                     isSuggestingStyle = false,
+                                    isOptimizingImagePrompt = false,
+                                    imagePromptOriginal = null,
+                                    optimizedImagePrompt = null,
+                                    showTextToImagePromptCard = false,
+                                    isPreparingTextToImagePrompt = false,
+                                    textToImagePromptSource = null,
+                                    textToImagePromptCandidate = null,
                                     result = null,
                                     message = "已从历史填入内容，请手动生成或编辑。"
                                 )
@@ -903,6 +995,13 @@ private fun AIContentCreatorApp() {
                                     imageGenerationStyle = item.imageGenerationStyle
                                         ?: createState.imageGenerationStyle,
                                     imageAspectRatio = item.imageAspectRatio ?: createState.imageAspectRatio,
+                                    isOptimizingImagePrompt = false,
+                                    imagePromptOriginal = null,
+                                    optimizedImagePrompt = null,
+                                    showTextToImagePromptCard = false,
+                                    isPreparingTextToImagePrompt = false,
+                                    textToImagePromptSource = null,
+                                    textToImagePromptCandidate = null,
                                     result = null,
                                     message = "已从历史恢复图片生成设置。"
                                 )
