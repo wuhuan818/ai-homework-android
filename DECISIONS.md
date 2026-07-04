@@ -48,3 +48,10 @@
 - Do not replace the user's original image or processed image cache output; rotation, watermark, and image sharing should keep their existing behavior.
 - Keep history management small: add favorites filtering, single-item delete, and clear confirmations instead of categories, albums, cloud sync, Room, or SQLCipher.
 - Warn users that compression can reduce detail recognition accuracy.
+
+## Stage 9 Vision Trust Polish
+
+- Real API failures should be shown as real errors instead of silently becoming Mock content.
+- Mock fallback is acceptable only for image preparation or image-input capability problems, and must be clearly labeled as demo fallback.
+- Vision upload can use a compressed or JPEG-converted copy to improve provider compatibility without overwriting the original image or processed share image.
+- Saving an API Key should first save the current active profile fields so endpoint/model edits and key storage stay in sync.

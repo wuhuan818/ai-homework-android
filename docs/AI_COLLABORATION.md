@@ -182,3 +182,34 @@ AI risk notes:
 - Compression can reduce fine-detail recognition even when it improves upload stability.
 - Some providers may still reject image data URLs or have stricter request limits.
 - Real-device Photo Picker Uri behavior should be verified because content providers can report size and decode metadata differently.
+
+## 2026-07-04 - Stage 9 Vision Trust Polish
+
+Human raised:
+
+- Image description Prompt did not fully use the user's input clues.
+- The fallback strategy could hide real API errors behind Mock output.
+- HEIC or unknown image formats could affect Vision interface compatibility.
+- Saving an API Key might not save edited profile fields from the same screen state.
+- GitHub code readability needed formatting so key files were not hard to review.
+
+Codex generated or modified:
+
+- Real image description Prompt now includes user supplement text or image/example clues, and explicitly distinguishes text-only example clues from real image recognition.
+- Real API errors now surface as readable errors instead of Mock fallback for auth, network, timeout, rate limit, service, config, and response-format failures.
+- Mock fallback is limited to image preparation and image-input capability problems, with an explicit demo fallback notice.
+- Vision upload preparation now directly uploads only JPEG, PNG, or WebP files that are already small enough; HEIC, HEIF, unknown, or oversized images are converted/compressed into an upload-only JPEG copy.
+- Saving an API Key now saves the current profile fields first, reloads settings afterward, and the Settings UI explains profile-specific encrypted keys.
+
+Human verification points:
+
+- Test Real mode with a deliberately invalid key and confirm it shows an auth error rather than Mock content.
+- Test Real mode image description with a valid vision-capable endpoint and confirm user supplement text affects the output.
+- Test a large or HEIC image if available and confirm the conversion/compression notice appears without replacing the original image.
+- Switch profiles, save profile fields plus key, and confirm the active profile and key status remain correct after reload.
+- Re-test Mock mode, Real text generation, history delete/filtering, encrypted history persistence, rotation, watermark, and sharing.
+
+AI risk notes:
+
+- Provider-specific error bodies vary, so Vision capability fallback uses conservative image-related hints instead of falling back on every HTTP 400.
+- JPEG conversion can reduce fine visual detail, but it improves compatibility and keeps the original image untouched.

@@ -130,6 +130,7 @@ fun SettingsScreen(
         }
 
         SettingsSection(title = "模型密钥") {
+            Text("模型密钥按当前配置预设独立加密保存。")
             OutlinedTextField(
                 modifier = Modifier.fillMaxWidth(),
                 value = apiKeyInput,

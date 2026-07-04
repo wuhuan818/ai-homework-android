@@ -77,3 +77,12 @@
 - Keep the first upload target around 1.5 MB to 2 MB with a 1600 px maximum side, starting JPEG quality at 85 and only reducing quality or dimensions when needed.
 - Keep history management intentionally simple: add `全部 / 收藏夹` filtering, single-item deletion, and confirmation dialogs, but do not add categories, albums, search, Room, SQLCipher, accounts, or cloud sync.
 - Current limitation: compression can make small visual details harder for the model to recognize, so the UI warns users when compression is used.
+
+## 2026-07-04 - Stage 9 Vision Trust Polish
+
+- Do not silently fall back to Mock for real API errors such as auth failure, rate limits, network failure, timeout, empty Base URL, invalid Base URL, empty model name, service errors, or unrecognized response format because that would make a failed real call look successful.
+- Use Mock fallback only for image capability issues such as image read failure, unsupported or incompatible image format, image too large for stable upload, or a configured model/interface that cannot accept image input.
+- Clearly prefix fallback output with `真实图片描述不可用，已使用演示模式兜底。` so users can distinguish a demo safety net from a real vision result.
+- Prepare a vision upload copy that may be compressed or converted to JPEG because HEIC, HEIF, unknown MIME types, and large device photos can be rejected by compatible providers even when the original image is valid on the device.
+- Keep upload copy preparation separate from the selected or processed image Uri so rotation, watermark, preview, and image sharing continue to use the existing image flow.
+- Save the current profile fields before saving that profile's API Key because users often edit Base URL/model fields and key together, and a key save should not leave the profile pointing at stale configuration values.

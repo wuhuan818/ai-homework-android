@@ -150,7 +150,9 @@ private fun AIContentCreatorApp() {
                             },
                             onChooseImage = {
                                 imagePickerLauncher.launch(
-                                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                    PickVisualMediaRequest(
+                                        ActivityResultContracts.PickVisualMedia.ImageOnly
+                                    )
                                 )
                             },
                             onRotateImage = {
@@ -201,7 +203,10 @@ private fun AIContentCreatorApp() {
                                         imageUploadNotice = null
                                     )
                                     val result = withContext(Dispatchers.Default) {
-                                        imageProcessor.addTextWatermark(sourceUri, createState.watermarkText)
+                                        imageProcessor.addTextWatermark(
+                                            sourceUri,
+                                            createState.watermarkText
+                                        )
                                     }
                                     createState = if (result.uri != null) {
                                         createState.copy(
@@ -392,6 +397,9 @@ private fun AIContentCreatorApp() {
                                 settings = updated
                                 apiKeyInput = ""
                                 settingsRepository.saveSettings(updated)
+                                val activeProfile = updated.activeProfile
+                                val keyStatus = if (activeProfile.hasApiKey) "已配置" else "未配置"
+                                settingsMessage = "已切换到配置：${activeProfile.name.ifBlank { "未命名配置" }}。密钥状态：$keyStatus。"
                             },
                             onProfileNameChanged = { name ->
                                 settings = settings.updateActiveProfile { it.copy(name = name) }
@@ -412,11 +420,13 @@ private fun AIContentCreatorApp() {
                                 settingsMessage = "设置已保存。"
                             },
                             onSaveApiKey = {
+                                settingsRepository.saveSettings(settings)
                                 if (settingsRepository.saveApiKey(apiKeyInput, settings.activeProfile.id)) {
                                     apiKeyInput = ""
                                     settings = settingsRepository.loadSettings()
-                                    settingsMessage = "模型密钥已加密保存。"
+                                    settingsMessage = "模型密钥已按当前配置预设加密保存。"
                                 } else {
+                                    settings = settingsRepository.loadSettings()
                                     settingsMessage = "请输入模型密钥后再保存。"
                                 }
                             },

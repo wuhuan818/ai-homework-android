@@ -2,5 +2,6 @@ package com.aihomework.aicontentcreator.data.ai
 
 class ModelClientException(
     val userMessage: String,
-    cause: Throwable? = null
+    cause: Throwable? = null,
+    val allowImageMockFallback: Boolean = false
 ) : Exception(userMessage, cause)

@@ -21,9 +21,24 @@ class SettingsRepository(context: Context) {
             defaultProfile.copy(
                 name = prefs.getString(profileKey(defaultProfile.id, PROFILE_NAME), defaultProfile.name)
                     ?: defaultProfile.name,
-                baseUrl = loadProfileValue(defaultProfile.id, PROFILE_BASE_URL, defaultProfile.baseUrl, KEY_BASE_URL),
-                textModel = loadProfileValue(defaultProfile.id, PROFILE_TEXT_MODEL, defaultProfile.textModel, KEY_TEXT_MODEL),
-                visionModel = loadProfileValue(defaultProfile.id, PROFILE_VISION_MODEL, defaultProfile.visionModel, KEY_VISION_MODEL),
+                baseUrl = loadProfileValue(
+                    defaultProfile.id,
+                    PROFILE_BASE_URL,
+                    defaultProfile.baseUrl,
+                    KEY_BASE_URL
+                ),
+                textModel = loadProfileValue(
+                    defaultProfile.id,
+                    PROFILE_TEXT_MODEL,
+                    defaultProfile.textModel,
+                    KEY_TEXT_MODEL
+                ),
+                visionModel = loadProfileValue(
+                    defaultProfile.id,
+                    PROFILE_VISION_MODEL,
+                    defaultProfile.visionModel,
+                    KEY_VISION_MODEL
+                ),
                 hasApiKey = hasEncryptedApiKey(defaultProfile.id)
             )
         }
@@ -125,7 +140,8 @@ class SettingsRepository(context: Context) {
     }
 
     private fun hasEncryptedApiKey(profileId: String): Boolean {
-        val hasProfileKey = prefs.contains(apiKeyCipherTextKey(profileId)) && prefs.contains(apiKeyIvKey(profileId))
+        val hasProfileKey = prefs.contains(apiKeyCipherTextKey(profileId)) &&
+            prefs.contains(apiKeyIvKey(profileId))
         val hasLegacyKey = profileId == AppSettings.DEFAULT_PROFILE_ID &&
             prefs.contains(KEY_API_KEY_CIPHER_TEXT) &&
             prefs.contains(KEY_API_KEY_IV)

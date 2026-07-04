@@ -18,6 +18,7 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
@@ -44,17 +45,12 @@ class RealModelClient(
             try {
                 return generateVision(request, apiKey)
             } catch (error: VisionImagePreparationException) {
-                throw ModelClientException(error.userMessage, error)
-            } catch (error: Throwable) {
-                val fallback = MockModelClient().generate(
-                    request.copy(
-                        input = request.input.ifBlank { "Selected image" },
-                        imageLabel = request.imageLabel ?: "Selected image"
-                    )
-                )
-                return fallback.copy(
-                    content = "真实图片描述暂不可用，已改用演示模式结果。\n\n${fallback.content}\n\n原因：${toUserMessage(error)}"
-                )
+                return generateImageMockFallback(request, error.userMessage)
+            } catch (error: ModelClientException) {
+                if (error.allowImageMockFallback) {
+                    return generateImageMockFallback(request, error.userMessage)
+                }
+                throw error
             }
         }
 
@@ -76,7 +72,7 @@ class RealModelClient(
         val imageUri = request.imageUri ?: throw ModelClientException("请先选择图片。")
         val preparedImage = VisionImagePreprocessor(context).prepareForVisionUpload(imageUri)
         val content = JSONArray()
-            .put(JSONObject().put("type", "text").put("text", imagePromptFor(request.imageDescriptionStyle)))
+            .put(JSONObject().put("type", "text").put("text", imagePromptFor(request, hasRealImage = true)))
             .put(
                 JSONObject()
                     .put("type", "image_url")
@@ -89,7 +85,8 @@ class RealModelClient(
             postChatCompletion(
                 apiKey = apiKey,
                 model = settings.visionModel.trim(),
-                messages = messages
+                messages = messages,
+                allowVisionFallback = true
             ),
             warningMessage = preparedImage.warningMessage
         )
@@ -98,7 +95,8 @@ class RealModelClient(
     private suspend fun postChatCompletion(
         apiKey: String,
         model: String,
-        messages: JSONArray
+        messages: JSONArray,
+        allowVisionFallback: Boolean = false
     ): String = withContext(Dispatchers.IO) {
         if (model.isBlank()) {
             throw ModelClientException("当前配置的模型名称为空，请前往设置页补充。")
@@ -121,7 +119,7 @@ class RealModelClient(
             httpClient.newCall(request).execute().use { response ->
                 val responseText = response.body?.string().orEmpty()
                 if (!response.isSuccessful) {
-                    throw ModelClientException(messageForStatus(response.code))
+                    throw exceptionForStatus(response.code, responseText, allowVisionFallback)
                 }
                 if (responseText.isBlank()) {
                     throw ModelClientException("接口返回为空，请稍后重试。")
@@ -158,6 +156,9 @@ class RealModelClient(
         if (settings.baseUrl.isBlank()) {
             throw ModelClientException("当前配置的接口地址为空，请前往设置页补充。")
         }
+        if (settings.baseUrl.trim().toHttpUrlOrNull() == null) {
+            throw ModelClientException("当前配置的接口地址格式不正确，请检查 Base URL。")
+        }
         if (input.length > MAX_INPUT_CHARS) {
             throw ModelClientException("输入内容过长，请缩短后重试。")
         }
@@ -192,7 +193,7 @@ class RealModelClient(
                 """.trimIndent()
 
             CreationScenario.ImageDescription ->
-                imagePromptFor(request.imageDescriptionStyle)
+                imagePromptFor(request, hasRealImage = request.imageUri != null)
         }
     }
 
@@ -217,8 +218,16 @@ class RealModelClient(
         )
     }
 
-    private fun imagePromptFor(style: ImageDescriptionStyle): String {
-        return when (style) {
+    private fun imagePromptFor(request: CreationRequest, hasRealImage: Boolean): String {
+        val userClue = request.input.trim()
+            .ifBlank { request.imageLabel.orEmpty().trim() }
+            .ifBlank { "无" }
+        val sourceInstruction = if (hasRealImage) {
+            "用户补充要求：$userClue"
+        } else {
+            "用户未上传真实图片，仅提供图片线索，请基于文字线索生成，不要伪装成真实识图。\n图片线索/用户补充要求：$userClue"
+        }
+        val stylePrompt = when (request.imageDescriptionStyle) {
             ImageDescriptionStyle.Objective ->
                 """
                 请根据图片内容进行客观中文描述。
@@ -252,6 +261,41 @@ class RealModelClient(
                 如果图片中无法判断商品，不要强行编造，应提示“更适合普通图片描述”。
                 """.trimIndent()
         }
+        return "$stylePrompt\n\n$sourceInstruction"
+    }
+
+    private suspend fun generateImageMockFallback(
+        request: CreationRequest,
+        reason: String
+    ): CreationResult {
+        val fallback = MockModelClient().generate(
+            request.copy(
+                input = request.input.ifBlank { request.imageLabel ?: "Selected image" },
+                imageLabel = request.imageLabel ?: "Selected image"
+            )
+        )
+        val fallbackNotice = "真实图片描述不可用，已使用演示模式兜底。"
+        return fallback.copy(
+            content = "$fallbackNotice\n\n${fallback.content}\n\n原因：$reason",
+            warningMessage = fallbackNotice
+        )
+    }
+
+    private fun exceptionForStatus(
+        code: Int,
+        responseText: String,
+        allowVisionFallback: Boolean
+    ): ModelClientException {
+        val allowsImageMockFallback = allowVisionFallback &&
+            code in VISION_FALLBACK_STATUS_CODES &&
+            responseLooksLikeVisionUnsupported(responseText)
+        if (allowsImageMockFallback) {
+            return ModelClientException(
+                userMessage = "当前模型或接口不支持图片输入，或图片输入格式不兼容。",
+                allowImageMockFallback = true
+            )
+        }
+        return ModelClientException(messageForStatus(code))
     }
 
     private fun messageForStatus(code: Int): String {
@@ -263,8 +307,9 @@ class RealModelClient(
         }
     }
 
-    private fun toUserMessage(error: Throwable): String {
-        return if (error is ModelClientException) error.userMessage else "图片请求失败。"
+    private fun responseLooksLikeVisionUnsupported(responseText: String): Boolean {
+        val normalized = responseText.lowercase()
+        return VISION_FALLBACK_ERROR_HINTS.any { hint -> hint in normalized }
     }
 
     private companion object {
@@ -272,5 +317,15 @@ class RealModelClient(
         const val MAX_INPUT_CHARS = 4000
         const val SYSTEM_PROMPT =
             "你是中文内容创作助手。输出要自然、具体、克制，尽量可以直接使用。"
+        val VISION_FALLBACK_STATUS_CODES = setOf(400, 415, 422)
+        val VISION_FALLBACK_ERROR_HINTS = listOf(
+            "image",
+            "vision",
+            "unsupported",
+            "image_url",
+            "modalit",
+            "media type",
+            "invalid image"
+        )
     }
 }

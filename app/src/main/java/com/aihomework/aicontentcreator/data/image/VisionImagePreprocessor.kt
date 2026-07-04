@@ -10,7 +10,6 @@ import android.provider.OpenableColumns
 import android.util.Base64
 import java.io.ByteArrayOutputStream
 import kotlin.math.max
-import kotlin.math.min
 
 data class PreparedVisionImage(
     val dataUrl: String,
@@ -37,10 +36,11 @@ class VisionImagePreprocessor(private val context: Context) {
 
         return try {
             val uri = Uri.parse(uriText)
-            val mimeType = context.contentResolver.getType(uri) ?: DEFAULT_MIME_TYPE
+            val mimeType = context.contentResolver.getType(uri)?.lowercase()
             val bounds = readImageBounds(uri)
                 ?: throw VisionImagePreparationException("无法读取所选图片，请重新选择图片。")
             val originalBytes = readOriginalByteSize(uri)
+            val canUploadOriginal = mimeType in DIRECT_UPLOAD_MIME_TYPES
 
             val originalBytesForUpload = when {
                 originalBytes in 1..TARGET_IMAGE_BYTES -> readBytesWithLimit(uri, TARGET_IMAGE_BYTES)
@@ -48,14 +48,22 @@ class VisionImagePreprocessor(private val context: Context) {
                     readBytesWithLimit(uri, TARGET_IMAGE_BYTES)
                 else -> null
             }
-            if (originalBytesForUpload != null && bounds.maxDimension <= INITIAL_MAX_DIMENSION) {
+            if (
+                canUploadOriginal &&
+                originalBytesForUpload != null &&
+                bounds.maxDimension <= INITIAL_MAX_DIMENSION
+            ) {
                 return PreparedVisionImage(
-                    dataUrl = toDataUrl(mimeType, originalBytesForUpload),
+                    dataUrl = toDataUrl(requireNotNull(mimeType), originalBytesForUpload),
                     originalWidth = bounds.width,
                     originalHeight = bounds.height,
                     finalWidth = bounds.width,
                     finalHeight = bounds.height,
-                    originalBytes = if (originalBytes > 0L) originalBytes else originalBytesForUpload.size.toLong(),
+                    originalBytes = if (originalBytes > 0L) {
+                        originalBytes
+                    } else {
+                        originalBytesForUpload.size.toLong()
+                    },
                     finalBytes = originalBytesForUpload.size.toLong(),
                     wasCompressed = false,
                     warningMessage = null
@@ -223,9 +231,19 @@ class VisionImagePreprocessor(private val context: Context) {
 
     private fun readOriginalByteSize(uri: Uri): Long {
         val queriedSize = runCatching {
-            context.contentResolver.query(uri, arrayOf(OpenableColumns.SIZE), null, null, null)?.use { cursor ->
+            context.contentResolver.query(
+                uri,
+                arrayOf(OpenableColumns.SIZE),
+                null,
+                null,
+                null
+            )?.use { cursor ->
                 val index = cursor.getColumnIndex(OpenableColumns.SIZE)
-                if (index >= 0 && cursor.moveToFirst()) cursor.getLong(index) else -1L
+                if (index >= 0 && cursor.moveToFirst()) {
+                    cursor.getLong(index)
+                } else {
+                    -1L
+                }
             } ?: -1L
         }.getOrDefault(-1L)
         if (queriedSize > 0L) return queriedSize
@@ -289,7 +307,12 @@ class VisionImagePreprocessor(private val context: Context) {
         const val JPEG_QUALITY_STEP = 5
         const val DEFAULT_MIME_TYPE = "image/jpeg"
         const val DIMENSION_STEP = 0.85f
-        const val COMPRESSION_WARNING = "图片较大，已压缩用于识别，可能对细节识别有一定影响。"
+        val DIRECT_UPLOAD_MIME_TYPES = setOf(
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+        )
+        const val COMPRESSION_WARNING = "图片已转换/压缩用于识别，可能对细节识别有一定影响。"
         const val IMAGE_TOO_LARGE_MESSAGE = "图片过大，处理失败，请选择较小图片或先进行压缩。"
     }
 }
