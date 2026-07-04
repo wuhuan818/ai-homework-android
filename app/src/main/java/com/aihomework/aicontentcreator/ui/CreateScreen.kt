@@ -440,26 +440,6 @@ private fun ImageGenerationOptions(
             minLines = 3
         )
 
-        val examples = listOf(
-            "橘猫坐在窗边看雨，温暖插画风。",
-            "极简风产品海报，一只蓝色保温杯，白色背景。",
-            "傍晚海边散步的人，电影感，柔和光线。"
-        )
-        Text(
-            text = if (state.input.isBlank()) "示例提示词" else "示例提示词（可替换当前输入）",
-            style = MaterialTheme.typography.titleSmall
-        )
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            examples.forEach { example ->
-                OutlinedButton(
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = { onImagePromptExampleSelected(example) }
-                ) {
-                    Text(example, maxLines = 2)
-                }
-            }
-        }
-
         OutlinedButton(
             modifier = Modifier.fillMaxWidth(),
             onClick = onOptimizeImagePrompt,
@@ -495,6 +475,26 @@ private fun ImageGenerationOptions(
                     ) {
                         Text("保留原提示词")
                     }
+                }
+            }
+        }
+
+        val examples = listOf(
+            "橘猫坐在窗边看雨，温暖插画风。",
+            "极简风产品海报，一只蓝色保温杯，白色背景。",
+            "傍晚海边散步的人，电影感，柔和光线。"
+        )
+        Text(
+            text = if (state.input.isBlank()) "示例提示词" else "示例提示词（可替换当前输入）",
+            style = MaterialTheme.typography.titleSmall
+        )
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            examples.forEach { example ->
+                OutlinedButton(
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = { onImagePromptExampleSelected(example) }
+                ) {
+                    Text(example, maxLines = 2)
                 }
             }
         }

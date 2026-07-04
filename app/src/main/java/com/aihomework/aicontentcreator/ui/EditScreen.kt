@@ -156,7 +156,7 @@ fun EditScreen(
                 modifier = Modifier.weight(1f),
                 onClick = onConvertMarkdown
             ) {
-                Text("整理为 Markdown")
+                Text("转 Markdown")
             }
             OutlinedButton(
                 modifier = Modifier.weight(1f),
