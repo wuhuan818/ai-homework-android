@@ -46,7 +46,16 @@ fun EditScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Text("编辑作品", style = MaterialTheme.typography.headlineSmall)
-        Text(state.scenario?.displayName ?: "暂无可编辑内容")
+        val hasEditableContent = state.itemId != null ||
+            state.scenario != null ||
+            state.text.isNotBlank()
+        if (!hasEditableContent) {
+            Text("暂无可编辑作品", style = MaterialTheme.typography.titleMedium)
+            Text("请先在创作页生成内容，或从历史页打开作品。")
+            return@Column
+        }
+
+        Text(state.scenario?.displayName ?: "当前作品")
 
         OutlinedTextField(
             modifier = Modifier.fillMaxWidth(),
@@ -67,10 +76,10 @@ fun EditScreen(
 
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedButton(onClick = onConvertMarkdown) {
-                Text("转为 Markdown")
+                Text("整理为 Markdown")
             }
             OutlinedButton(onClick = onConvertPlainText) {
-                Text("转为纯文本")
+                Text("去除 Markdown 符号")
             }
         }
     }

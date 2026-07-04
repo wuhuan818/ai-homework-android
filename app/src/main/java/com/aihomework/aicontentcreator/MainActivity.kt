@@ -85,6 +85,7 @@ private fun AIContentCreatorApp() {
     var settings by remember { mutableStateOf(settingsRepository.loadSettings()) }
     var apiKeyInput by remember { mutableStateOf("") }
     var settingsMessage by remember { mutableStateOf<String?>(null) }
+    var textModelTestResult by remember { mutableStateOf<String?>(null) }
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
@@ -432,15 +433,18 @@ private fun AIContentCreatorApp() {
                             apiKeyInput = apiKeyInput,
                             historyStorageStatus = historyStorageStatus.toDisplayText(),
                             message = settingsMessage,
+                            textModelTestResult = textModelTestResult,
                             onModeChanged = { mode ->
                                 val updated = settings.copy(mode = mode)
                                 settings = updated
                                 settingsRepository.saveSettings(updated)
+                                textModelTestResult = null
                             },
                             onActiveProfileChanged = { profileId ->
                                 val updated = settings.copy(activeProfileId = profileId)
                                 settings = updated
                                 apiKeyInput = ""
+                                textModelTestResult = null
                                 settingsRepository.saveSettings(updated)
                                 val activeProfile = updated.activeProfile
                                 val keyStatus = if (activeProfile.hasApiKey) "已配置" else "未配置"
@@ -448,20 +452,25 @@ private fun AIContentCreatorApp() {
                             },
                             onProfileNameChanged = { name ->
                                 settings = settings.updateActiveProfile { it.copy(name = name) }
+                                textModelTestResult = null
                             },
                             onBaseUrlChanged = { baseUrl ->
                                 settings = settings.updateActiveProfile { it.copy(baseUrl = baseUrl) }
+                                textModelTestResult = null
                             },
                             onTextModelChanged = { textModel ->
                                 settings = settings.updateActiveProfile { it.copy(textModel = textModel) }
+                                textModelTestResult = null
                             },
                             onVisionModelChanged = { visionModel ->
                                 settings = settings.updateActiveProfile { it.copy(visionModel = visionModel) }
+                                textModelTestResult = null
                             },
                             onApiKeyInputChanged = { apiKeyInput = it },
                             onSaveSettings = {
                                 settingsRepository.saveSettings(settings)
                                 settings = settingsRepository.loadSettings()
+                                textModelTestResult = null
                                 settingsMessage = "设置已保存。"
                             },
                             onSaveApiKey = {
@@ -469,6 +478,7 @@ private fun AIContentCreatorApp() {
                                 if (settingsRepository.saveApiKey(apiKeyInput, settings.activeProfile.id)) {
                                     apiKeyInput = ""
                                     settings = settingsRepository.loadSettings()
+                                    textModelTestResult = null
                                     settingsMessage = "模型密钥已按当前配置预设加密保存。"
                                 } else {
                                     settings = settingsRepository.loadSettings()
@@ -479,7 +489,23 @@ private fun AIContentCreatorApp() {
                                 settingsRepository.clearApiKey(settings.activeProfile.id)
                                 apiKeyInput = ""
                                 settings = settingsRepository.loadSettings()
+                                textModelTestResult = null
                                 settingsMessage = "模型密钥已清除。"
+                            },
+                            onTestTextConnection = {
+                                textModelTestResult = "正在测试文本模型连接..."
+                                scope.launch {
+                                    try {
+                                        RealModelClient(appContext, settings) {
+                                            settingsRepository.getApiKey(settings.activeProfile.id)
+                                        }.testTextConnection()
+                                        textModelTestResult = "文本模型连接成功。"
+                                    } catch (error: ModelClientException) {
+                                        textModelTestResult = error.userMessage
+                                    } catch (error: Exception) {
+                                        textModelTestResult = "文本模型连接失败，请稍后重试。"
+                                    }
+                                }
                             },
                             onMessageShown = {
                                 settingsMessage = null

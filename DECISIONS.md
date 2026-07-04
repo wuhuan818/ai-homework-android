@@ -62,3 +62,11 @@
 - Keep image work focused on preview, local example image, rotation, watermark, restore original, and sharing; do not add image generation in this stage.
 - Add restore original by clearing only the processed image Uri so the selected image path remains stable and cache cleanup does not become part of the current scope.
 - Use a small local drawable example image rendered to cache instead of network images, copyrighted photos, user photos, or a larger asset pipeline.
+
+## Stage 11 UX Information Architecture
+
+- Reorder Create, Edit, History, and Settings from a normal user's next action instead of from project evidence needs.
+- Keep App screens focused on operation, status, and recovery prompts; move engineering proof and competition explanation to README / docs.
+- Keep encrypted-history technology details out of the History page's top visual area so the work list and favorites remain primary.
+- Add a lightweight text model connection test for the current active configuration, but do not add model comparison, scoring, speed tests, or rankings.
+- Continue to exclude image generation because this stage is about information hierarchy and configuration debugging, not expanding media creation scope.

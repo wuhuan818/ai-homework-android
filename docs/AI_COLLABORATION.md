@@ -243,3 +243,33 @@ AI risk notes:
 
 - The built-in sample image is intentionally simple and local; it is for workflow demonstration, not model-quality evaluation.
 - Real-device testing should confirm button wrapping and preview sizing on the target phone.
+
+## 2026-07-04 - Stage 11 UX Information Architecture
+
+Human raised:
+
+- Previous optimization was too point-by-point.
+- Redundant copy on the Create page was only one example of a broader information hierarchy issue.
+- History and Settings also had engineering explanation placed before the user's main task.
+- This stage should first inspect the App as a user, then optimize consistently as a builder.
+
+Codex generated or modified:
+
+- Create page hierarchy so scenario choice, mode state, image description modules, and result actions are clearer.
+- Edit page empty state with a next-step prompt before showing editing controls.
+- History page hierarchy so `全部 / 收藏夹` and 作品列表 are primary, while encrypted storage is a lightweight safety note.
+- Settings page hierarchy with current status, mode, presets, advanced configuration, text model self-test, and concise safety storage copy.
+- A lightweight Real mode text connection self-test that reuses existing `RealModelClient` error handling and does not save history.
+- README, project decisions, and implementation decisions to keep engineering proof in docs rather than the main App UI.
+
+Human verification points:
+
+- Confirm Create, Edit, History, and Settings now read as one consistent App rather than separate feature proofs.
+- Confirm the text model self-test works with a valid compatible endpoint and returns readable errors with invalid key, endpoint, or network conditions.
+- Confirm self-test does not create a history item and does not expose API Key, request body, or response body in UI or logs.
+- Re-test Mock / Real generation, presets, image description styles, example image, restore original, history delete, favorites, encrypted history, rotation, watermark, and sharing.
+
+AI risk notes:
+
+- UI hierarchy still needs real-device review for button wrapping and scroll balance.
+- Compatible providers may return different text-model errors, so self-test messaging depends on the existing conservative error mapping.

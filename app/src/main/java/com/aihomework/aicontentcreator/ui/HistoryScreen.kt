@@ -113,22 +113,18 @@ fun HistoryScreen(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Text("历史作品", style = MaterialTheme.typography.headlineSmall)
-        StorageStatusBlock(state.storageStatus)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            HistoryFilter.entries.forEach { filter ->
+                FilterChip(
+                    selected = selectedFilter == filter,
+                    onClick = { selectedFilter = filter },
+                    label = { Text(filter.label) }
+                )
+            }
+        }
         if (state.items.isEmpty()) {
             Text("暂无历史作品，请先在创作页生成内容。")
         } else {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                HistoryFilter.entries.forEach { filter ->
-                    FilterChip(
-                        selected = selectedFilter == filter,
-                        onClick = { selectedFilter = filter },
-                        label = { Text(filter.label) }
-                    )
-                }
-            }
-            Button(onClick = { showClearConfirmation = true }) {
-                Text("清空历史")
-            }
             if (visibleItems.isEmpty()) {
                 Text("暂无收藏作品")
             } else {
@@ -143,7 +139,11 @@ fun HistoryScreen(
                     }
                 }
             }
+            OutlinedButton(onClick = { showClearConfirmation = true }) {
+                Text("清空历史")
+            }
         }
+        StorageStatusBlock(state.storageStatus)
     }
 }
 
@@ -154,10 +154,8 @@ private fun StorageStatusBlock(storageStatus: String) {
             modifier = Modifier.padding(14.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            Text("本地存储状态", style = MaterialTheme.typography.titleMedium)
-            Text("历史记录：已本地保存")
-            Text("加密方式：Android Keystore + AES-GCM")
-            Text("明文保护：生成内容不会直接写入本地文件")
+            Text("安全提示", style = MaterialTheme.typography.titleMedium)
+            Text("历史作品已本地加密保存")
             Text(storageStatus)
         }
     }
@@ -181,11 +179,16 @@ private fun HistoryCard(
         ) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(item.scenario.displayName, style = MaterialTheme.typography.titleMedium)
-                Text(if (item.isFavorite) "已收藏" else "未收藏")
+                if (item.isFavorite) {
+                    Text("已收藏")
+                }
             }
             Text(formatTime(item.createdAtMillis), style = MaterialTheme.typography.bodySmall)
             Text(item.summary)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(onClick = onOpenForEdit) {
+                    Text("编辑")
+                }
                 OutlinedButton(onClick = onToggleFavorite) {
                     Text(if (item.isFavorite) "取消收藏" else "收藏")
                 }

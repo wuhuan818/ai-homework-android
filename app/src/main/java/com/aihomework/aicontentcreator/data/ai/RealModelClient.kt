@@ -57,6 +57,21 @@ class RealModelClient(
         return generateText(request, apiKey)
     }
 
+    suspend fun testTextConnection() {
+        validateCommonSettings("连接测试")
+        val apiKey = apiKeyProvider()?.trim()
+        if (apiKey.isNullOrBlank()) {
+            throw ModelClientException("当前配置尚未填写模型密钥，请先保存密钥。")
+        }
+        postChatCompletion(
+            apiKey = apiKey,
+            model = settings.textModel.trim(),
+            messages = JSONArray()
+                .put(JSONObject().put("role", "system").put("content", SYSTEM_PROMPT))
+                .put(JSONObject().put("role", "user").put("content", "请回复：连接成功"))
+        )
+    }
+
     private suspend fun generateText(request: CreationRequest, apiKey: String): CreationResult {
         val content = postChatCompletion(
             apiKey = apiKey,

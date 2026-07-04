@@ -94,3 +94,13 @@
 - Do not add image generation because the current stage is about image description, preview, and basic processing experience; generation would require new product scope, stronger safety wording, and likely new provider behavior.
 - Add only `恢复原图` instead of a complex editor because clearing `processedImageUri` restores the selected image with minimal state risk and preserves the existing rotate, watermark, share, Mock, and Real paths.
 - Use a small local drawable example image rendered into cache rather than a network image so demos work offline, avoid copyright-sensitive user photos, and provide a normal content Uri for preview, processing, and Real-mode vision preparation.
+
+## 2026-07-04 - Stage 11 UX Information Architecture
+
+- Rework the four main pages from the user's next action because earlier UI polish solved isolated copy problems but did not fully align page hierarchy across the App.
+- Weaken engineering and competition explanation inside the App because judges and developers can read README / docs, while normal users need task-oriented screens.
+- Keep History focused on 作品列表、收藏夹和删除操作; encrypted storage remains visible only as a lightweight safety note instead of a top-of-page technical proof.
+- Move Settings toward current status, mode choice, presets, advanced fields, self-test, and safety note so configuration debugging is easier without turning the page into a technical appendix.
+- Add current-configuration text model self-test because Real mode setup often fails at endpoint, model, network, or key entry; keep it as a single short request with readable errors.
+- Do not add model comparison, scoring, speed tests, rankings, cloud sync, account features, or image generation because those would expand scope beyond information architecture and setup confidence.
+- Continue not to implement image generation because the current product line is content writing, image description, and basic local image handling; image generation would require new UX, safety copy, provider behavior, and evidence scope.

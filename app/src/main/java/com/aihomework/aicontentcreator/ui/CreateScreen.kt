@@ -78,11 +78,11 @@ fun CreateScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Text("AI 内容创作助手", style = MaterialTheme.typography.headlineSmall)
-        Text("选择场景，开始创作。")
+        Text("创作", style = MaterialTheme.typography.headlineSmall)
+        Text("选择场景，输入内容后生成。")
         ModeNotice(modelMode = modelMode, hasApiKey = hasApiKey)
 
-        Text("创作场景", style = MaterialTheme.typography.titleMedium)
+        Text("选择创作场景", style = MaterialTheme.typography.titleMedium)
         CreationScenario.entries.forEach { scenario ->
             ScenarioCard(
                 scenario = scenario,
@@ -157,6 +157,10 @@ fun CreateScreen(
                 }
 
                 ImageSection(title = "图片基础处理") {
+                    val hasSelectedImage = state.selectedImageUri != null || state.processedImageUri != null
+                    if (!hasSelectedImage) {
+                        Text("选择图片后可用。")
+                    }
                     state.imageProcessingMessage?.let { Text(it) }
 
                     Row(
@@ -166,14 +170,14 @@ fun CreateScreen(
                         OutlinedButton(
                             modifier = Modifier.weight(1f),
                             onClick = onRotateImage,
-                            enabled = !state.isImageProcessing
+                            enabled = hasSelectedImage && !state.isImageProcessing
                         ) {
                             Text("旋转 90°")
                         }
                         OutlinedButton(
                             modifier = Modifier.weight(1f),
                             onClick = onShareProcessedImage,
-                            enabled = !state.isImageProcessing
+                            enabled = state.processedImageUri != null && !state.isImageProcessing
                         ) {
                             Text("分享图片")
                         }
@@ -197,7 +201,7 @@ fun CreateScreen(
                         OutlinedButton(
                             modifier = Modifier.weight(1f),
                             onClick = onAddWatermark,
-                            enabled = !state.isImageProcessing
+                            enabled = hasSelectedImage && !state.isImageProcessing
                         ) {
                             Text("添加水印")
                         }
@@ -237,16 +241,16 @@ fun CreateScreen(
                     Text(result.scenario.displayName, style = MaterialTheme.typography.bodyMedium)
                     Text(result.content)
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(
+                            modifier = Modifier.fillMaxWidth(),
+                            onClick = onEdit
+                        ) {
+                            Text("编辑")
+                        }
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Button(
-                                modifier = Modifier.weight(1f),
-                                onClick = onEdit
-                            ) {
-                                Text("编辑")
-                            }
                             OutlinedButton(
                                 modifier = Modifier.weight(1f),
                                 onClick = onFavorite
@@ -259,12 +263,12 @@ fun CreateScreen(
                             ) {
                                 Text("分享")
                             }
-                        }
-                        OutlinedButton(
-                            modifier = Modifier.fillMaxWidth(),
-                            onClick = onCopyResult
-                        ) {
-                            Text("复制文本")
+                            OutlinedButton(
+                                modifier = Modifier.weight(1f),
+                                onClick = onCopyResult
+                            ) {
+                                Text("复制")
+                            }
                         }
                     }
                 }
@@ -292,9 +296,9 @@ private fun ImageSection(
 @Composable
 private fun ModeNotice(modelMode: ModelMode, hasApiKey: Boolean) {
     val notice = when {
-        modelMode == ModelMode.Mock -> "当前为演示模式：使用本地模板生成，不上传内容。"
-        !hasApiKey -> "尚未配置模型密钥，请前往设置页配置。"
-        else -> "当前为真实模型模式：将调用你配置的大模型接口。"
+        modelMode == ModelMode.Mock -> "演示模式：本地生成，不上传内容。"
+        !hasApiKey -> "未配置密钥：请先在设置页配置密钥。"
+        else -> "真实模式：调用当前模型配置。"
     }
     Card(modifier = Modifier.fillMaxWidth()) {
         Text(

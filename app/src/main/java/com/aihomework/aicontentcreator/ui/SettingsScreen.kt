@@ -33,6 +33,7 @@ fun SettingsScreen(
     apiKeyInput: String,
     historyStorageStatus: String,
     message: String?,
+    textModelTestResult: String?,
     onModeChanged: (ModelMode) -> Unit,
     onActiveProfileChanged: (String) -> Unit,
     onProfileNameChanged: (String) -> Unit,
@@ -43,6 +44,7 @@ fun SettingsScreen(
     onSaveSettings: () -> Unit,
     onSaveApiKey: () -> Unit,
     onClearApiKey: () -> Unit,
+    onTestTextConnection: () -> Unit,
     onMessageShown: () -> Unit
 ) {
     val context = LocalContext.current
@@ -62,8 +64,13 @@ fun SettingsScreen(
     ) {
         Text("设置", style = MaterialTheme.typography.headlineSmall)
 
-        SettingsSection(title = "模型模式") {
+        SettingsSection(title = "当前状态") {
             Text("当前模式：${settings.mode.displayText()}")
+            Text("当前配置：${settings.activeProfile.name.ifBlank { "未命名配置" }}")
+            Text(if (settings.hasApiKey) "密钥状态：已配置" else "密钥状态：未配置")
+        }
+
+        SettingsSection(title = "模型模式") {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 FilterChip(
                     selected = settings.mode == ModelMode.Mock,
@@ -79,7 +86,6 @@ fun SettingsScreen(
         }
 
         SettingsSection(title = "接口配置预设") {
-            Text("该功能用于保存备用接口配置，不进行模型评分或横向对比。")
             settings.profiles.forEach { profile ->
                 FilterChip(
                     selected = profile.id == settings.activeProfile.id,
@@ -93,6 +99,9 @@ fun SettingsScreen(
                 )
             }
             Text("当前启用配置：${settings.activeProfile.name.ifBlank { "未命名配置" }}")
+        }
+
+        SettingsSection(title = "高级配置") {
             OutlinedTextField(
                 modifier = Modifier.fillMaxWidth(),
                 value = settings.activeProfile.name,
@@ -121,16 +130,7 @@ fun SettingsScreen(
                 label = { Text("图像模型（Vision Model）") },
                 singleLine = true
             )
-            Button(
-                onClick = onSaveSettings,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("保存当前配置")
-            }
-        }
 
-        SettingsSection(title = "模型密钥") {
-            Text("模型密钥按当前配置预设独立加密保存。")
             OutlinedTextField(
                 modifier = Modifier.fillMaxWidth(),
                 value = apiKeyInput,
@@ -147,6 +147,12 @@ fun SettingsScreen(
                 text = if (settings.hasApiKey) "模型密钥状态：已配置" else "模型密钥状态：未配置",
                 style = MaterialTheme.typography.bodyMedium
             )
+            Button(
+                onClick = onSaveSettings,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("保存配置")
+            }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(onClick = onSaveApiKey) {
                     Text("保存密钥")
@@ -157,10 +163,20 @@ fun SettingsScreen(
             }
         }
 
+        SettingsSection(title = "配置自测") {
+            Button(
+                onClick = onTestTextConnection,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("测试文本模型连接")
+            }
+            textModelTestResult?.let {
+                Text(it)
+            }
+        }
+
         SettingsSection(title = "安全与存储") {
-            Text("存储方式：Android Keystore 加密保存")
-            Text("历史记录：AES-GCM 本地加密")
-            Text("密钥显示：仅显示已配置 / 未配置，不展示完整密钥")
+            Text("模型密钥和历史内容均本地加密保存。")
             Text(historyStorageStatus)
         }
     }
