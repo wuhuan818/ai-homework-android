@@ -7,6 +7,9 @@ import com.aihomework.aicontentcreator.data.model.CreationRequest
 import com.aihomework.aicontentcreator.data.model.CreationResult
 import com.aihomework.aicontentcreator.data.model.CreationScenario
 import com.aihomework.aicontentcreator.data.model.ImageDescriptionStyle
+import com.aihomework.aicontentcreator.data.model.RewriteAction
+import com.aihomework.aicontentcreator.data.model.StyleAdvice
+import com.aihomework.aicontentcreator.data.model.TextCreationStyle
 import com.aihomework.aicontentcreator.data.settings.AppSettings
 import java.io.IOException
 import java.net.SocketTimeoutException
@@ -55,6 +58,40 @@ class RealModelClient(
         }
 
         return generateText(request, apiKey)
+    }
+
+    override suspend fun suggestStyles(
+        scenario: CreationScenario,
+        input: String
+    ): List<StyleAdvice> {
+        validateCommonSettings(input)
+        val apiKey = apiKeyProvider()?.trim()
+        if (apiKey.isNullOrBlank()) {
+            throw ModelClientException("当前配置尚未填写模型密钥，请前往设置页补充。")
+        }
+        val content = postChatCompletion(
+            apiKey = apiKey,
+            model = settings.textModel.trim(),
+            messages = JSONArray()
+                .put(JSONObject().put("role", "system").put("content", SYSTEM_PROMPT))
+                .put(JSONObject().put("role", "user").put("content", styleAdvicePrompt(scenario, input)))
+        )
+        return parseStyleAdvice(content, scenario)
+    }
+
+    override suspend fun rewriteText(text: String, action: RewriteAction): String {
+        validateCommonSettings(text)
+        val apiKey = apiKeyProvider()?.trim()
+        if (apiKey.isNullOrBlank()) {
+            throw ModelClientException("当前配置尚未填写模型密钥，请前往设置页补充。")
+        }
+        return postChatCompletion(
+            apiKey = apiKey,
+            model = settings.textModel.trim(),
+            messages = JSONArray()
+                .put(JSONObject().put("role", "system").put("content", SYSTEM_PROMPT))
+                .put(JSONObject().put("role", "user").put("content", rewritePrompt(text, action)))
+        )
     }
 
     suspend fun testTextConnection() {
@@ -181,35 +218,95 @@ class RealModelClient(
 
     private fun promptFor(request: CreationRequest): String {
         return when (request.scenario) {
-            CreationScenario.Moments ->
-                """
-                请根据用户输入生成 3 条朋友圈文案。
-                三条风格分别为：
-                1. 温柔日常
-                2. 轻松幽默
-                3. 简洁高级
-                要求每条不超过 60 字，不要像广告，不要空泛，尽量保留用户输入的具体细节。
+            CreationScenario.Moments -> momentsPromptFor(request)
 
-                用户输入：${request.input}
-                """.trimIndent()
-
-            CreationScenario.Product ->
-                """
-                请根据用户输入生成商品文案。
-                输出格式：
-                标题：
-                核心卖点：
-                适用人群：
-                使用场景：
-                短文案：
-                要求不编造参数，不夸大功效，语言真实克制。
-
-                用户输入：${request.input}
-                """.trimIndent()
+            CreationScenario.Product -> productPromptFor(request)
 
             CreationScenario.ImageDescription ->
                 imagePromptFor(request, hasRealImage = request.imageUri != null)
         }
+    }
+
+    private fun momentsPromptFor(request: CreationRequest): String {
+        val versionInstruction = if (request.generationCount >= 3) {
+            "请生成 3 个明显不同的版本，用“版本 1 / 版本 2 / 版本 3”清晰分隔，每个版本表达角度要不同。"
+        } else {
+            "请生成 1 个可直接发布的版本。"
+        }
+        return """
+            请根据用户输入生成朋友圈文案。
+            用户选择的风格：${request.textStyle.displayName}
+            $versionInstruction
+            要求：
+            1. 保持适合中文社交平台的自然表达。
+            2. 不编造用户没有提供的事实。
+            3. 不要像广告，不要空泛堆词。
+            4. 尽量保留用户输入中的具体细节。
+            5. 单个版本尽量控制在 80 字以内。
+
+            用户输入：${request.input}
+        """.trimIndent()
+    }
+
+    private fun productPromptFor(request: CreationRequest): String {
+        val versionInstruction = if (request.generationCount >= 3) {
+            "请生成 3 个明显不同的版本，用“版本 1 / 版本 2 / 版本 3”清晰分隔，每个版本从不同表达角度切入。"
+        } else {
+            "请生成 1 个可直接使用的版本。"
+        }
+        return """
+            请根据用户输入生成商品文案。
+            用户选择的风格：${request.textStyle.displayName}
+            $versionInstruction
+            建议输出包含标题、核心卖点、适用人群、使用场景、短文案。
+            要求：
+            1. 不编造事实。
+            2. 不夸大商品参数、功效、销量、价格或资质。
+            3. 保持适合中文电商平台或社交电商平台的表达。
+            4. 语言真实克制，但要有清晰购买理由。
+
+            用户输入：${request.input}
+        """.trimIndent()
+    }
+
+    private fun styleAdvicePrompt(scenario: CreationScenario, input: String): String {
+        val styleNames = TextCreationStyle.optionsFor(scenario)
+            .joinToString(separator = "、") { it.displayName }
+        val sceneName = when (scenario) {
+            CreationScenario.Moments -> "朋友圈文案"
+            CreationScenario.Product -> "商品文案"
+            CreationScenario.ImageDescription -> "文字创作"
+        }
+        return """
+            请为一段${sceneName}输入推荐 2 到 3 个合适的创作风格。
+            可选风格只能从以下列表中选择：$styleNames。
+            输出格式必须为每行一条：风格名称：简短理由。
+            理由要说明输入内容为什么适合该方向。
+            不要编造用户没有提供的事实，不要输出可选列表以外的风格。
+
+            用户输入：$input
+        """.trimIndent()
+    }
+
+    private fun rewritePrompt(text: String, action: RewriteAction): String {
+        val instruction = when (action) {
+            RewriteAction.Shorter -> "改写得更简短，保留核心信息。"
+            RewriteAction.Gentler -> "改写得更温柔自然。"
+            RewriteAction.Premium -> "改写得更克制、更高级，减少口水话。"
+            RewriteAction.Conversational -> "改写得更口语，像自然表达。"
+            RewriteAction.Title -> "从内容中提炼 1 到 3 个中文标题，不要超过 18 字。"
+        }
+        return """
+            请对下面的中文文本进行二次改写。
+            改写方向：${action.displayName}
+            具体要求：$instruction
+            不要编造事实，不要加入原文没有的信息。
+            如果是商品相关内容，不要夸大商品参数、功效、价格或资质。
+            只输出改写结果，不要解释过程。
+
+            原文：
+            $text
+        """.trimIndent()
     }
 
     private fun CreationRequest.toResult(content: String): CreationResult {
@@ -277,6 +374,37 @@ class RealModelClient(
                 """.trimIndent()
         }
         return "$stylePrompt\n\n$sourceInstruction"
+    }
+
+    private fun parseStyleAdvice(content: String, scenario: CreationScenario): List<StyleAdvice> {
+        val options = TextCreationStyle.optionsFor(scenario)
+        val parsed = content.lines()
+            .map { line ->
+                line.trim()
+                    .replace(Regex("^[-*]\\s*"), "")
+                    .replace(Regex("^\\d+[.、)]\\s*"), "")
+            }
+            .filter { it.isNotBlank() }
+            .mapNotNull { line ->
+                val style = options.firstOrNull { line.startsWith(it.displayName) || it.displayName in line }
+                if (style == null) {
+                    null
+                } else {
+                    val reason = line
+                        .substringAfter("：", missingDelimiterValue = line)
+                        .substringAfter(":", missingDelimiterValue = line)
+                        .removePrefix(style.displayName)
+                        .trim()
+                        .ifBlank { "适合当前输入的表达方向。" }
+                    StyleAdvice(style, reason)
+                }
+            }
+            .distinctBy { it.style }
+            .take(3)
+        if (parsed.isNotEmpty()) return parsed
+
+        val fallback = TextCreationStyle.defaultFor(scenario)
+        return listOf(StyleAdvice(fallback, "模型返回的推荐格式不够清晰，已保留一个稳妥默认方向。"))
     }
 
     private suspend fun generateImageMockFallback(

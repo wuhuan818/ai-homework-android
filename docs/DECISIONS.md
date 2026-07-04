@@ -104,3 +104,13 @@
 - Add current-configuration text model self-test because Real mode setup often fails at endpoint, model, network, or key entry; keep it as a single short request with readable errors.
 - Do not add model comparison, scoring, speed tests, rankings, cloud sync, account features, or image generation because those would expand scope beyond information architecture and setup confidence.
 - Continue not to implement image generation because the current product line is content writing, image description, and basic local image handling; image generation would require new UX, safety copy, provider behavior, and evidence scope.
+
+## 2026-07-04 - Stage 12 Content Richness
+
+- Add style choices for 朋友圈文案 and 商品文案 because real users often start from an event, mood, or product facts but still need an expression direction.
+- Keep the style selectors scene-specific so 朋友圈文案 shows 温馨日常、轻松幽默、简短高级、洒脱随性、文艺氛围、情绪表达, while 商品文案 shows 种草推荐、卖点清单、专业可信、促销转化、小红书风、短视频口播.
+- Add style recommendation because asking users to guess the best tone creates unnecessary friction; the app can infer 2 to 3 reasonable directions from keywords in Mock mode or from the configured text model in Real mode.
+- Add optional 3-version generation because comparison helps users choose and edit, while still keeping one active model path and one saved result instead of ranking models or benchmarking output.
+- Keep history unchanged because saving the final generated text preserves old encrypted history compatibility and avoids a data migration for this stage.
+- Add Edit page rewrite actions so users can continue refining generated content in place; rewrite does not update history until the user taps save.
+- Continue not to implement image generation because this stage is about writing richness, not a new media-generation product surface.

@@ -273,3 +273,35 @@ AI risk notes:
 
 - UI hierarchy still needs real-device review for button wrapping and scroll balance.
 - Compatible providers may return different text-model errors, so self-test messaging depends on the existing conservative error mapping.
+
+## 2026-07-04 - Stage 12 Content Richness
+
+Human raised:
+
+- Users may not only be dissatisfied with existing UI; they may need missing creative features.
+- 朋友圈文案 lacked a clear style direction selector.
+- Users may know what happened but not know which expression direction fits.
+- Current text creation choices felt thin and needed moderate enrichment.
+- GitHub Raw single-line presentation is not a core blocker for this stage unless touched files can naturally keep normal line breaks.
+
+Codex generated or modified:
+
+- Scene-specific text style options for 朋友圈文案 and 商品文案.
+- Mock and Real generation support for selected text style and optional 3-version output.
+- “帮我推荐风格” with Mock keyword rules and Real text-model prompting.
+- Edit page rewrite actions for 更简短、更温柔、更高级、更口语、提炼标题.
+- README and decision docs explaining the content-richness scope and continued exclusion of image generation.
+
+Human verification points:
+
+- Confirm each text scene only shows its own styles and defaults to 温馨日常 or 种草推荐.
+- Test style recommendation with empty input, Mock mode keywords, and a Real text model configuration.
+- Confirm 3-version output is clearly separated and can still be edited, copied, shared, favorited, and saved to encrypted history.
+- Confirm Edit page rewrite updates only the edit textbox until the user taps save.
+- Re-test image description, sample image, restore original, rotation, watermark, sharing, history delete, favorites, encrypted history, and Mock / Real mode.
+
+AI risk notes:
+
+- Real model style recommendation and rewrite quality depends on the configured endpoint and model behavior.
+- Multi-version output is prompt-guided, so some providers may vary the exact formatting.
+- The stage intentionally avoids image generation, image editing expansion, account features, cloud sync, and model benchmarking.

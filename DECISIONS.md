@@ -70,3 +70,11 @@
 - Keep encrypted-history technology details out of the History page's top visual area so the work list and favorites remain primary.
 - Add a lightweight text model connection test for the current active configuration, but do not add model comparison, scoring, speed tests, or rankings.
 - Continue to exclude image generation because this stage is about information hierarchy and configuration debugging, not expanding media creation scope.
+
+## Stage 12 Content Richness
+
+- Add text creation styles because users need clear expression directions before generation, not only a blank input and one generic output.
+- Add style recommendations because users may know the event or product facts but not know which tone fits the content.
+- Add optional 3-version generation so users can compare expression angles without introducing model scoring, speed tests, rankings, or multi-model comparison.
+- Add lightweight rewrite actions in the Edit page so generated text can be refined in place before the user decides to save.
+- Continue to exclude image generation because the current product line remains writing, image description, and basic local image handling.

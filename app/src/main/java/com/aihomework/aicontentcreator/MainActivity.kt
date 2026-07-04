@@ -35,6 +35,7 @@ import com.aihomework.aicontentcreator.data.image.ImageProcessor
 import com.aihomework.aicontentcreator.data.model.CreationRequest
 import com.aihomework.aicontentcreator.data.model.CreationResult
 import com.aihomework.aicontentcreator.data.model.HistoryItem
+import com.aihomework.aicontentcreator.data.model.TextCreationStyle
 import com.aihomework.aicontentcreator.data.repository.CreationRepository
 import com.aihomework.aicontentcreator.data.repository.HistoryRepository
 import com.aihomework.aicontentcreator.data.settings.ModelMode
@@ -134,6 +135,11 @@ private fun AIContentCreatorApp() {
                                     processedImageUri = null,
                                     imageProcessingMessage = null,
                                     imageUploadNotice = null,
+                                    textStyle = TextCreationStyle.defaultFor(scenario),
+                                    generationCount = 1,
+                                    styleAdvice = emptyList(),
+                                    styleAdviceMessage = null,
+                                    isSuggestingStyle = false,
                                     result = null,
                                     message = null
                                 )
@@ -141,7 +147,70 @@ private fun AIContentCreatorApp() {
                             onImageDescriptionStyleSelected = { style ->
                                 createState = createState.copy(imageDescriptionStyle = style)
                             },
-                            onInputChanged = { createState = createState.copy(input = it) },
+                            onTextStyleSelected = { style ->
+                                createState = createState.copy(textStyle = style)
+                            },
+                            onGenerationCountChanged = { count ->
+                                createState = createState.copy(generationCount = count)
+                            },
+                            onSuggestStyle = {
+                                val input = createState.input.trim()
+                                if (input.isBlank()) {
+                                    createState = createState.copy(
+                                        styleAdvice = emptyList(),
+                                        styleAdviceMessage = "请先输入内容，再推荐风格。"
+                                    )
+                                    return@CreateScreen
+                                }
+                                scope.launch {
+                                    createState = createState.copy(
+                                        isSuggestingStyle = true,
+                                        styleAdviceMessage = "正在推荐...",
+                                        styleAdvice = emptyList(),
+                                        message = null
+                                    )
+                                    try {
+                                        val client = if (settings.mode == ModelMode.Mock) {
+                                            MockModelClient()
+                                        } else {
+                                            RealModelClient(appContext, settings) {
+                                                settingsRepository.getApiKey(settings.activeProfile.id)
+                                            }
+                                        }
+                                        val advice = CreationRepository(client).suggestStyles(
+                                            createState.selectedScenario,
+                                            input
+                                        )
+                                        createState = createState.copy(
+                                            isSuggestingStyle = false,
+                                            styleAdvice = advice,
+                                            styleAdviceMessage = if (advice.isEmpty()) {
+                                                "暂未找到合适推荐，请手动选择风格。"
+                                            } else {
+                                                null
+                                            }
+                                        )
+                                    } catch (error: ModelClientException) {
+                                        createState = createState.copy(
+                                            isSuggestingStyle = false,
+                                            styleAdviceMessage = error.userMessage,
+                                            message = error.userMessage
+                                        )
+                                    } catch (error: Exception) {
+                                        createState = createState.copy(
+                                            isSuggestingStyle = false,
+                                            styleAdviceMessage = "推荐失败，请稍后重试。",
+                                            message = "推荐失败，请稍后重试。"
+                                        )
+                                    }
+                                }
+                            },
+                            onInputChanged = {
+                                createState = createState.copy(
+                                    input = it,
+                                    styleAdviceMessage = null
+                                )
+                            },
                             onUseMockImage = {
                                 scope.launch {
                                     createState = createState.copy(
@@ -295,7 +364,9 @@ private fun AIContentCreatorApp() {
                                                 input = input,
                                                 imageLabel = if (hasImage) "已选择图片" else null,
                                                 imageUri = imageUri,
-                                                imageDescriptionStyle = createState.imageDescriptionStyle
+                                                imageDescriptionStyle = createState.imageDescriptionStyle,
+                                                textStyle = createState.textStyle,
+                                                generationCount = createState.generationCount
                                             )
                                         )
                                         historyRepository.addResult(result)
@@ -374,6 +445,52 @@ private fun AIContentCreatorApp() {
                                     createState = createState.updateResultText(id, editState.text)
                                     editState = editState.copy(message = "修改已保存。")
                                     selectedTab = AppTab.Create
+                                }
+                            },
+                            onRewrite = { action ->
+                                if (editState.text.isBlank()) {
+                                    editState = editState.copy(
+                                        rewriteMessage = "暂无可改写内容。",
+                                        message = "暂无可改写内容。"
+                                    )
+                                    return@EditScreen
+                                }
+                                scope.launch {
+                                    editState = editState.copy(
+                                        isRewriting = true,
+                                        rewriteMessage = "正在改写...",
+                                        message = null
+                                    )
+                                    try {
+                                        val client = if (settings.mode == ModelMode.Mock) {
+                                            MockModelClient()
+                                        } else {
+                                            RealModelClient(appContext, settings) {
+                                                settingsRepository.getApiKey(settings.activeProfile.id)
+                                            }
+                                        }
+                                        val rewritten = CreationRepository(client).rewriteText(
+                                            editState.text,
+                                            action
+                                        )
+                                        editState = editState.copy(
+                                            isRewriting = false,
+                                            text = rewritten,
+                                            rewriteMessage = "已按“${action.displayName}”改写，保存后会更新历史。"
+                                        )
+                                    } catch (error: ModelClientException) {
+                                        editState = editState.copy(
+                                            isRewriting = false,
+                                            rewriteMessage = error.userMessage,
+                                            message = error.userMessage
+                                        )
+                                    } catch (error: Exception) {
+                                        editState = editState.copy(
+                                            isRewriting = false,
+                                            rewriteMessage = "改写失败，请稍后重试。",
+                                            message = "改写失败，请稍后重试。"
+                                        )
+                                    }
                                 }
                             },
                             onConvertMarkdown = {

@@ -8,6 +8,7 @@ import android.net.Uri
 import android.os.Build
 import android.widget.Toast
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -26,6 +27,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -38,6 +40,7 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import com.aihomework.aicontentcreator.data.model.CreationScenario
 import com.aihomework.aicontentcreator.data.model.ImageDescriptionStyle
+import com.aihomework.aicontentcreator.data.model.TextCreationStyle
 import com.aihomework.aicontentcreator.data.settings.ModelMode
 import com.aihomework.aicontentcreator.ui.state.CreateUiState
 
@@ -48,6 +51,9 @@ fun CreateScreen(
     hasApiKey: Boolean,
     onScenarioSelected: (CreationScenario) -> Unit,
     onImageDescriptionStyleSelected: (ImageDescriptionStyle) -> Unit,
+    onTextStyleSelected: (TextCreationStyle) -> Unit,
+    onGenerationCountChanged: (Int) -> Unit,
+    onSuggestStyle: () -> Unit,
     onInputChanged: (String) -> Unit,
     onUseMockImage: () -> Unit,
     onChooseImage: () -> Unit,
@@ -99,6 +105,17 @@ fun CreateScreen(
             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
             minLines = 3
         )
+
+        if (state.selectedScenario == CreationScenario.Moments ||
+            state.selectedScenario == CreationScenario.Product
+        ) {
+            TextCreationOptions(
+                state = state,
+                onTextStyleSelected = onTextStyleSelected,
+                onGenerationCountChanged = onGenerationCountChanged,
+                onSuggestStyle = onSuggestStyle
+            )
+        }
 
         if (state.selectedScenario == CreationScenario.ImageDescription) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -289,6 +306,73 @@ private fun ImageSection(
         ) {
             Text(title, style = MaterialTheme.typography.titleMedium)
             content()
+        }
+    }
+}
+
+@Composable
+private fun TextCreationOptions(
+    state: CreateUiState,
+    onTextStyleSelected: (TextCreationStyle) -> Unit,
+    onGenerationCountChanged: (Int) -> Unit,
+    onSuggestStyle: () -> Unit
+) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Text("创作风格", style = MaterialTheme.typography.titleMedium)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                TextCreationStyle.optionsFor(state.selectedScenario).forEach { style ->
+                    FilterChip(
+                        selected = state.textStyle == style,
+                        onClick = { onTextStyleSelected(style) },
+                        label = { Text(style.displayName) }
+                    )
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                OutlinedButton(
+                    modifier = Modifier.weight(1f),
+                    onClick = onSuggestStyle,
+                    enabled = !state.isSuggestingStyle
+                ) {
+                    Text(if (state.isSuggestingStyle) "正在推荐..." else "帮我推荐风格")
+                }
+                Row(
+                    modifier = Modifier.weight(1f),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text("生成 3 个版本")
+                    Switch(
+                        checked = state.generationCount >= 3,
+                        onCheckedChange = { checked ->
+                            onGenerationCountChanged(if (checked) 3 else 1)
+                        }
+                    )
+                }
+            }
+
+            state.styleAdviceMessage?.let { message ->
+                Text(message, color = MaterialTheme.colorScheme.primary)
+            }
+
+            if (state.styleAdvice.isNotEmpty()) {
+                Text("推荐方向：", style = MaterialTheme.typography.titleSmall)
+                state.styleAdvice.forEachIndexed { index, advice ->
+                    Text("${index + 1}. ${advice.style.displayName}：${advice.reason}")
+                }
+            }
         }
     }
 }

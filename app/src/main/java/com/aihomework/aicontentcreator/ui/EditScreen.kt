@@ -1,14 +1,19 @@
 package com.aihomework.aicontentcreator.ui
 
 import android.widget.Toast
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -18,6 +23,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.aihomework.aicontentcreator.data.model.RewriteAction
 import com.aihomework.aicontentcreator.ui.state.EditUiState
 
 @Composable
@@ -25,6 +31,7 @@ fun EditScreen(
     state: EditUiState,
     onTextChanged: (String) -> Unit,
     onSave: () -> Unit,
+    onRewrite: (RewriteAction) -> Unit,
     onConvertMarkdown: () -> Unit,
     onConvertPlainText: () -> Unit,
     onShare: () -> Unit,
@@ -64,6 +71,39 @@ fun EditScreen(
             label = { Text("编辑创作结果") },
             minLines = 8
         )
+
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Column(
+                modifier = Modifier.padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text("二次改写", style = MaterialTheme.typography.titleMedium)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    RewriteAction.entries.forEach { action ->
+                        FilterChip(
+                            selected = false,
+                            enabled = !state.isRewriting,
+                            onClick = { onRewrite(action) },
+                            label = { Text(action.displayName) }
+                        )
+                    }
+                }
+                if (state.isRewriting) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp))
+                        Text("正在改写...")
+                    }
+                }
+                state.rewriteMessage?.let { message ->
+                    Text(message, color = MaterialTheme.colorScheme.primary)
+                }
+            }
+        }
 
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Button(onClick = onSave) {
