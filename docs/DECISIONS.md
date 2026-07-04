@@ -69,3 +69,11 @@
 - Add image description style selection because the same image can reasonably need an objective description, a social caption, or product-oriented copy in a contest demo.
 - Keep generation as a single request and single result display because it protects the existing Mock / Real flow and avoids turning style selection into a benchmarking feature.
 - Current limitation: backup profiles ship with empty endpoint/model fields and must be filled by the user before Real mode can use them.
+
+## 2026-07-04 - Stage 8 Image Upload And History Polish
+
+- Compress large images before sending them to the vision model because real-device photos can exceed provider request limits or make uploads unstable during a live demo.
+- Generate a temporary upload-only image copy so the user's original selected image is not overwritten, and the existing rotation, watermark, preview, and share flow can keep using their own Uri state.
+- Keep the first upload target around 1.5 MB to 2 MB with a 1600 px maximum side, starting JPEG quality at 85 and only reducing quality or dimensions when needed.
+- Keep history management intentionally simple: add `全部 / 收藏夹` filtering, single-item deletion, and confirmation dialogs, but do not add categories, albums, search, Room, SQLCipher, accounts, or cloud sync.
+- Current limitation: compression can make small visual details harder for the model to recognize, so the UI warns users when compression is used.

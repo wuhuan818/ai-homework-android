@@ -94,6 +94,7 @@ private fun AIContentCreatorApp() {
                 selectedImageUri = uri.toString(),
                 processedImageUri = null,
                 imageProcessingMessage = "已选择图片，可继续旋转或添加文字水印。",
+                imageUploadNotice = null,
                 input = createState.input.ifBlank { "已选择图片" },
                 message = "图片已选择。"
             )
@@ -129,6 +130,7 @@ private fun AIContentCreatorApp() {
                                     selectedImageUri = null,
                                     processedImageUri = null,
                                     imageProcessingMessage = null,
+                                    imageUploadNotice = null,
                                     result = null,
                                     message = null
                                 )
@@ -142,7 +144,8 @@ private fun AIContentCreatorApp() {
                                     input = "示例图片：夜晚城市街道和明亮招牌",
                                     selectedImageUri = null,
                                     processedImageUri = null,
-                                    imageProcessingMessage = "已使用示例图片线索，不会上传真实图片。"
+                                    imageProcessingMessage = "已使用示例图片线索，不会上传真实图片。",
+                                    imageUploadNotice = null
                                 )
                             },
                             onChooseImage = {
@@ -159,7 +162,8 @@ private fun AIContentCreatorApp() {
                                 scope.launch {
                                     createState = createState.copy(
                                         isImageProcessing = true,
-                                        imageProcessingMessage = "正在旋转图片..."
+                                        imageProcessingMessage = "正在旋转图片...",
+                                        imageUploadNotice = null
                                     )
                                     val result = withContext(Dispatchers.Default) {
                                         imageProcessor.rotateImage(sourceUri, 90f)
@@ -168,12 +172,14 @@ private fun AIContentCreatorApp() {
                                         createState.copy(
                                             processedImageUri = result.uri.toString(),
                                             isImageProcessing = false,
-                                            imageProcessingMessage = "图片已旋转 90°。"
+                                            imageProcessingMessage = "图片已旋转 90°。",
+                                            imageUploadNotice = null
                                         )
                                     } else {
                                         createState.copy(
                                             isImageProcessing = false,
                                             imageProcessingMessage = result.errorMessage,
+                                            imageUploadNotice = null,
                                             message = result.errorMessage
                                         )
                                     }
@@ -191,7 +197,8 @@ private fun AIContentCreatorApp() {
                                 scope.launch {
                                     createState = createState.copy(
                                         isImageProcessing = true,
-                                        imageProcessingMessage = "正在添加文字水印..."
+                                        imageProcessingMessage = "正在添加文字水印...",
+                                        imageUploadNotice = null
                                     )
                                     val result = withContext(Dispatchers.Default) {
                                         imageProcessor.addTextWatermark(sourceUri, createState.watermarkText)
@@ -200,12 +207,14 @@ private fun AIContentCreatorApp() {
                                         createState.copy(
                                             processedImageUri = result.uri.toString(),
                                             isImageProcessing = false,
-                                            imageProcessingMessage = "文字水印已添加。"
+                                            imageProcessingMessage = "文字水印已添加。",
+                                            imageUploadNotice = null
                                         )
                                     } else {
                                         createState.copy(
                                             isImageProcessing = false,
                                             imageProcessingMessage = result.errorMessage,
+                                            imageUploadNotice = null,
                                             message = result.errorMessage
                                         )
                                     }
@@ -228,7 +237,11 @@ private fun AIContentCreatorApp() {
                                     return@CreateScreen
                                 }
                                 scope.launch {
-                                    createState = createState.copy(isLoading = true, message = null)
+                                    createState = createState.copy(
+                                        isLoading = true,
+                                        message = null,
+                                        imageUploadNotice = null
+                                    )
                                     try {
                                         val client = if (settings.mode == ModelMode.Mock) {
                                             MockModelClient()
@@ -247,12 +260,17 @@ private fun AIContentCreatorApp() {
                                             )
                                         )
                                         historyRepository.addResult(result)
-                                        createState = createState.copy(isLoading = false, result = result)
+                                        createState = createState.copy(
+                                            isLoading = false,
+                                            result = result,
+                                            imageUploadNotice = result.warningMessage
+                                        )
                                         editState = result.toEditState()
                                     } catch (error: ModelClientException) {
                                         createState = createState.copy(
                                             isLoading = false,
-                                            message = error.userMessage
+                                            message = error.userMessage,
+                                            imageUploadNotice = error.userMessage
                                         )
                                     } catch (error: Exception) {
                                         createState = createState.copy(
@@ -350,6 +368,9 @@ private fun AIContentCreatorApp() {
                             },
                             onToggleFavorite = { id ->
                                 historyRepository.toggleFavorite(id)
+                            },
+                            onDeleteItem = { id ->
+                                historyRepository.deleteItem(id.toString())
                             },
                             onClearHistory = {
                                 historyRepository.clearHistory()

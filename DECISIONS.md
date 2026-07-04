@@ -41,3 +41,10 @@
 - Add 3 interface configuration presets for backup endpoint switching, not for multi-model scoring, ranking, or speed comparison.
 - Keep each preset's API Key independently encrypted and keep full keys out of plaintext settings objects and UI.
 - Add image description styles because they improve demo flexibility while preserving the existing single-request, single-result generation flow.
+
+## Stage 8 Image Upload And History Polish
+
+- Compress only the image copy sent to the vision model so large device photos are less likely to fail during Real mode demos.
+- Do not replace the user's original image or processed image cache output; rotation, watermark, and image sharing should keep their existing behavior.
+- Keep history management small: add favorites filtering, single-item delete, and clear confirmations instead of categories, albums, cloud sync, Room, or SQLCipher.
+- Warn users that compression can reduce detail recognition accuracy.

@@ -152,3 +152,33 @@ AI risk notes:
 - Existing single-profile settings and API Key data are preserved for the default profile, but should be checked on an upgraded install.
 - Some compatible endpoints may use different model names or vision support behavior.
 - Style prompts guide output but cannot guarantee every provider follows the requested structure exactly.
+
+## 2026-07-04 - Stage 8 Image Upload And History Polish
+
+Human raised:
+
+- Large image uploads can fail in Real mode image description demos.
+- History could only be cleared all at once.
+- Favorites had no dedicated filtering entry.
+
+Codex generated or modified:
+
+- `VisionImagePreprocessor` for upload-only image preparation with dimension and JPEG size controls.
+- Real image description path so large images are compressed before vision upload and compression failures become readable Chinese prompts.
+- Create screen state and UI to show the compression notice only when an upload copy was compressed.
+- History repository and screen support for single-item delete, delete confirmation, `全部 / 收藏夹` filtering, empty favorites state, and clear-history confirmation.
+- README, decision notes, and evidence plan for Stage 8 verification.
+
+Human verification points:
+
+- Select a large real device image in Real mode and confirm the compression notice appears after generation.
+- Confirm the image description result still succeeds with a compatible vision endpoint.
+- Confirm rotation, watermark, processed-image share, Mock mode, and Real text generation still work.
+- Confirm History can switch between `全部` and `收藏夹`, and favorite toggles update the filtered list immediately.
+- Confirm single delete and clear history both show confirmation dialogs before removing encrypted local data.
+
+AI risk notes:
+
+- Compression can reduce fine-detail recognition even when it improves upload stability.
+- Some providers may still reject image data URLs or have stricter request limits.
+- Real-device Photo Picker Uri behavior should be verified because content providers can report size and decode metadata differently.

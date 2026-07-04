@@ -12,6 +12,7 @@ data class CreateUiState(
     val processedImageUri: String? = null,
     val watermarkText: String = "",
     val imageProcessingMessage: String? = null,
+    val imageUploadNotice: String? = null,
     val isImageProcessing: Boolean = false,
     val isLoading: Boolean = false,
     val result: CreationResult? = null,

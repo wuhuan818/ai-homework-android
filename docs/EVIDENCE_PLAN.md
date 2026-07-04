@@ -129,3 +129,22 @@ Additional checks:
 - Verify the three styles produce different prompts and different Mock templates.
 - Verify `git diff` does not contain a real API Key prefix or real authorization credential.
 - Re-test image rotation, watermark, share, and encrypted history because this stage must not break those paths.
+
+## Stage 8 Image Upload And History Polish Evidence
+
+Capture these screenshots or short recordings:
+
+1. Image description screen after selecting a large image and generating, showing `图片较大，已压缩用于识别，可能对细节识别有一定影响。`.
+2. Successful image description result after the large-image upload path.
+3. History page showing the `全部 / 收藏夹` filter controls.
+4. Favorites view showing either `暂无收藏作品` or the favorited content list.
+5. Single-history delete confirmation dialog with `确认删除这条历史？`.
+6. Clear-history confirmation dialog with `确认清空历史？`.
+7. Successful `assembleDebug` output.
+8. Successful `adb install -r app\build\outputs\apk\debug\app-debug.apk` output on a real device, if a device is connected.
+
+Additional checks:
+
+- Verify compression only affects the upload copy and does not replace the selected image, rotated image, watermarked image, or shared image.
+- Verify Mock mode, Real text mode, configuration presets, encrypted history reload, and sharing still work.
+- Verify `git diff` does not contain a real API Key prefix, Bearer token, password, token, or new sensitive logging.

@@ -44,6 +44,23 @@ class HistoryRepository(context: Context) {
         }
     }
 
+    fun deleteItem(id: String): String? {
+        val itemId = id.toLongOrNull() ?: return "删除失败，请稍后重试。"
+        val current = history.value
+        if (current.none { it.id == itemId }) {
+            return "未找到要删除的历史。"
+        }
+
+        val updated = current.filterNot { it.id == itemId }
+        history.value = updated
+        storageStatus.value = storage.saveHistory(updated)
+        return if (storageStatus.value == HistoryStorageStatus.SaveFailed) {
+            "删除后保存失败，请稍后重试。"
+        } else {
+            null
+        }
+    }
+
     fun clearHistory() {
         storage.clearHistory()
         history.value = emptyList()

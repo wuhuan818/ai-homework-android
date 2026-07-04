@@ -5,6 +5,6 @@ data class CreationResult(
     val scenario: CreationScenario,
     val originalInput: String,
     val content: String,
-    val createdAtMillis: Long
+    val createdAtMillis: Long,
+    val warningMessage: String? = null
 )
-

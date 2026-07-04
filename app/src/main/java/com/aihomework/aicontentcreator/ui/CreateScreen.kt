@@ -129,6 +129,7 @@ fun CreateScreen(
                 ImagePreview(uriText = previewUri)
 
                 state.imageProcessingMessage?.let { Text(it) }
+                state.imageUploadNotice?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedButton(

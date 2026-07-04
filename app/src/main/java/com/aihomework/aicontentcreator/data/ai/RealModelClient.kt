@@ -1,14 +1,13 @@
 package com.aihomework.aicontentcreator.data.ai
 
 import android.content.Context
-import android.net.Uri
-import android.util.Base64
+import com.aihomework.aicontentcreator.data.image.VisionImagePreparationException
+import com.aihomework.aicontentcreator.data.image.VisionImagePreprocessor
 import com.aihomework.aicontentcreator.data.model.CreationRequest
 import com.aihomework.aicontentcreator.data.model.CreationResult
 import com.aihomework.aicontentcreator.data.model.CreationScenario
 import com.aihomework.aicontentcreator.data.model.ImageDescriptionStyle
 import com.aihomework.aicontentcreator.data.settings.AppSettings
-import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
@@ -44,6 +43,8 @@ class RealModelClient(
         if (request.scenario == CreationScenario.ImageDescription && request.imageUri != null) {
             try {
                 return generateVision(request, apiKey)
+            } catch (error: VisionImagePreparationException) {
+                throw ModelClientException(error.userMessage, error)
             } catch (error: Throwable) {
                 val fallback = MockModelClient().generate(
                     request.copy(
@@ -73,13 +74,13 @@ class RealModelClient(
 
     private suspend fun generateVision(request: CreationRequest, apiKey: String): CreationResult {
         val imageUri = request.imageUri ?: throw ModelClientException("请先选择图片。")
-        val imageDataUrl = readImageAsDataUrl(imageUri)
+        val preparedImage = VisionImagePreprocessor(context).prepareForVisionUpload(imageUri)
         val content = JSONArray()
             .put(JSONObject().put("type", "text").put("text", imagePromptFor(request.imageDescriptionStyle)))
             .put(
                 JSONObject()
                     .put("type", "image_url")
-                    .put("image_url", JSONObject().put("url", imageDataUrl))
+                    .put("image_url", JSONObject().put("url", preparedImage.dataUrl))
             )
         val messages = JSONArray()
             .put(JSONObject().put("role", "system").put("content", SYSTEM_PROMPT))
@@ -89,7 +90,8 @@ class RealModelClient(
                 apiKey = apiKey,
                 model = settings.visionModel.trim(),
                 messages = messages
-            )
+            ),
+            warningMessage = preparedImage.warningMessage
         )
     }
 
@@ -152,28 +154,6 @@ class RealModelClient(
         }
     }
 
-    private fun readImageAsDataUrl(uriText: String): String {
-        val uri = Uri.parse(uriText)
-        val mimeType = context.contentResolver.getType(uri) ?: "image/jpeg"
-        val bytes = context.contentResolver.openInputStream(uri)?.use { input ->
-            val output = ByteArrayOutputStream()
-            val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
-            var total = 0
-            while (true) {
-                val read = input.read(buffer)
-                if (read == -1) break
-                total += read
-                if (total > MAX_IMAGE_BYTES) {
-                    throw ModelClientException("选择的图片过大，请换一张较小的图片。")
-                }
-                output.write(buffer, 0, read)
-            }
-            output.toByteArray()
-        } ?: throw ModelClientException("无法读取选择的图片。")
-
-        return "data:$mimeType;base64,${Base64.encodeToString(bytes, Base64.NO_WRAP)}"
-    }
-
     private fun validateCommonSettings(input: String) {
         if (settings.baseUrl.isBlank()) {
             throw ModelClientException("当前配置的接口地址为空，请前往设置页补充。")
@@ -217,6 +197,10 @@ class RealModelClient(
     }
 
     private fun CreationRequest.toResult(content: String): CreationResult {
+        return toResult(content, warningMessage = null)
+    }
+
+    private fun CreationRequest.toResult(content: String, warningMessage: String?): CreationResult {
         val now = System.currentTimeMillis()
         val finalContent = if (scenario == CreationScenario.ImageDescription) {
             "图片描述风格：${imageDescriptionStyle.displayName}\n\n$content"
@@ -228,7 +212,8 @@ class RealModelClient(
             scenario = scenario,
             originalInput = input.ifBlank { imageLabel ?: "已选择图片" },
             content = finalContent,
-            createdAtMillis = now
+            createdAtMillis = now,
+            warningMessage = warningMessage
         )
     }
 
@@ -285,7 +270,6 @@ class RealModelClient(
     private companion object {
         val JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaType()
         const val MAX_INPUT_CHARS = 4000
-        const val MAX_IMAGE_BYTES = 4 * 1024 * 1024
         const val SYSTEM_PROMPT =
             "你是中文内容创作助手。输出要自然、具体、克制，尽量可以直接使用。"
     }
