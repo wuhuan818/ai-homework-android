@@ -34,7 +34,7 @@
 
 ## 本地加密验证
 
-推荐使用 `LOCAL-VERIFY-2026` 作为验证关键词：在演示模式生成包含该关键词的内容，收藏或保存后重启 App，确认历史仍可读。App 内可读内容不等于本地明文存储；本次补充使用 `adb run-as` 在 App 私有 `shared_prefs` / `files` 范围搜索该关键词，日志结果为 `NO_PLAINTEXT_MATCH`，支持私有落盘文件不能直接读出该用户内容。生成图片长期目录 `files/generated_images_encrypted/` 的文件头检查已完成，所选 `.imgenc` 文件首 16 字节不是 PNG/JPEG/WebP 常见明文图片头。保存到相册或系统分享属于用户主动导出的明文副本，不再属于 App 私有加密存储边界。
+推荐使用 `LOCAL-VERIFY-2026` 作为验证关键词：在演示模式生成包含该关键词的内容，收藏或保存后重启 App，确认历史仍可读。App 内可读内容不等于本地明文存储；本次补充使用 `adb run-as` 在 App 私有 `shared_prefs` / `files` 范围搜索该关键词，日志结果为 `NO_PLAINTEXT_MATCH`，支持私有落盘文件不能直接读出该用户内容。生成图片长期目录 `files/generated_images_encrypted/` 的文件头检查已完成，所选 `.imgenc` 文件首 16 字节不是 PNG/JPEG/WebP 常见明文图片头。对应截图见 `evidence/screenshots/14-本地加密验证-明文搜索结果.png` 和 `evidence/screenshots/15-本地加密验证-图片文件头.png`。保存到相册或系统分享属于用户主动导出的明文副本，不再属于 App 私有加密存储边界。
 
 ## 异常场景
 
@@ -60,5 +60,5 @@
 - `evidence/logs/encrypted_image_file_check.txt`
 - `evidence/logs/encrypted_image_file_check_numbered.txt`
 - `evidence/logs/encryption_screenshot_targets.txt`
-- `evidence/screenshots/`：用户已手动补充 13 张截图，需最终审阅。
+- `evidence/screenshots/`：用户已手动补充 15 张截图，其中包含 2 张本地加密验证截图，需最终审阅。
 - `evidence/videos/`：用户已手动补充 1 个录屏，需最终审阅。
