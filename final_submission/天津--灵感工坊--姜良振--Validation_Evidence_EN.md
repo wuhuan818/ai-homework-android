@@ -6,8 +6,8 @@
 - Build result: BUILD SUCCESSFUL
 - APK source path: `D:\AIHomework\AIContentCreator\app\build\outputs\apk\debug\app-debug.apk`
 - APK submission path: `天津--灵感工坊--姜良振--APK-debug.apk`
-- APK size: 16,056,638 bytes, about 15.31 MB
-- APK SHA-256: `B38E4FE99B30913C2D942BB7D3AD7B7D132C5DFE7B29A8BE37DFC456C372CE0A`
+- APK size: 12,598,930 bytes, about 12.02 MB
+- APK SHA-256: `55D42137F049AB320BE1D6BA1C63BBEC5EBFE340094D75006EDD42CD3C884AF7`
 - Current commit: see `git rev-parse HEAD` and `evidence/logs/git_info.txt` from the final packaging run.
 - Current branch: `stage15-final-submission`
 
@@ -16,7 +16,7 @@
 - Install command: `adb install -r app\build\outputs\apk\debug\app-debug.apk`
 - Device ID: `10AC8M0C61001B1`
 - Android version: `14`
-- Install result: this attempt returned `INSTALL_FAILED_ABORTED: User rejected permissions`, meaning the device-side install confirmation was rejected. The package does not fake a successful install; a successful install log should be added after the user approves installation on the device.
+- Install result: `Success`
 
 ## Functional Validation Path
 

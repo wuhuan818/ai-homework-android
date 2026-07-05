@@ -6,8 +6,8 @@
 - 构建结果：BUILD SUCCESSFUL
 - APK 源路径：`D:\AIHomework\AIContentCreator\app\build\outputs\apk\debug\app-debug.apk`
 - APK 提交路径：`天津--灵感工坊--姜良振--APK-debug.apk`
-- APK 大小：16,056,638 bytes，约 15.31 MB
-- APK SHA-256：`B38E4FE99B30913C2D942BB7D3AD7B7D132C5DFE7B29A8BE37DFC456C372CE0A`
+- APK 大小：12,598,930 bytes，约 12.02 MB
+- APK SHA-256：`55D42137F049AB320BE1D6BA1C63BBEC5EBFE340094D75006EDD42CD3C884AF7`
 - 当前 commit：以最终打包时 `git rev-parse HEAD` 和 `evidence/logs/git_info.txt` 记录为准。
 - 当前分支：`stage15-final-submission`
 
@@ -16,7 +16,7 @@
 - 安装命令：`adb install -r app\build\outputs\apk\debug\app-debug.apk`
 - 设备 ID：`10AC8M0C61001B1`
 - Android 版本：`14`
-- 安装结果：本次安装尝试返回 `INSTALL_FAILED_ABORTED: User rejected permissions`，表示设备端拒绝安装确认。本提交包不伪造安装成功证据，需用户在设备端允许安装后补充成功日志。
+- 安装结果：`Success`
 
 ## 功能验证路径
 

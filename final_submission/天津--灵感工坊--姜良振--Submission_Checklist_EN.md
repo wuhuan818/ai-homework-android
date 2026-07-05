@@ -8,7 +8,7 @@
 | AI collaboration explanation | Provided in Chinese and English |
 | Reproducible code repository | GitHub link, final branch, and commit provided |
 | APK | Debug APK provided for assignment review installation |
-| App installability | APK built; this install attempt was rejected on the device side, so a successful install log should be supplemented after approval |
+| App installability | APK built and installed once for verification; result: Success |
 | At least three creation scenarios | Moments copy, product description, image description, and image generation covered |
 | Text generation | Covered through Moments copy and product description |
 | Image description | Covered through imported/sample image description |
