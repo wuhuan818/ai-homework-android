@@ -69,7 +69,11 @@ private fun ImageResultContent(
     onGenerate: () -> Unit
 ) {
     Text(result.scenario.displayName, style = MaterialTheme.typography.bodyMedium)
-    ImagePreview(uriText = result.imagePreviewUri)
+    AsyncGeneratedImagePreview(
+        imageFileName = result.imageFileName,
+        fallbackUriText = result.imagePreviewUri,
+        cacheKey = result.imageFileName ?: "result_${result.id}"
+    )
     Text(result.content)
     Row(
         modifier = Modifier.fillMaxWidth(),

@@ -123,7 +123,7 @@ fun EditScreen(
                                     onClick = onApplyRewrite,
                                     enabled = !state.isRewriting
                                 ) {
-                                    Text("应用这个版本")
+                                    Text("应用")
                                 }
                                 OutlinedButton(
                                     modifier = Modifier.weight(1f),

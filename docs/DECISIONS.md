@@ -175,7 +175,7 @@
 - Do not force image prompts to become very short; instead make original and optimized prompts expandable so users can inspect complete useful prompt text without silent truncation.
 - Add a confirmation step before using text results for companion images because product copy or long social text may need to be整理成画面描述 before it is suitable for text-to-image prompting.
 - Add a separate `prepareImagePromptFromText` path instead of changing `optimizeImagePrompt` so the UI can keep `优化提示词` and `整理提示词` as distinct actions.
-- Keep gesture crop for a later stage because manual selection needs dedicated touch interaction, preview behavior, and real-device validation beyond this creation-page polish pass.
+- Keep gesture crop for a later stage because manual selection needs dedicated touch interaction, preview behavior, and real-device validation beyond this creation-page polish pass; the lightweight gesture box crop was later completed in Stage 14.6.
 
 ## 2026-07-05 - Stage 14.6 Gesture Box Crop
 
@@ -184,3 +184,12 @@
 - Implement only lightweight P0 gestures because dragging the crop rectangle and resizing from the lower-right handle covers the immediate need without introducing a large crop library.
 - Do not add multi-touch image zoom, rotated crop rectangles, drawing, stickers, inpaint, image-to-image, or a professional editor surface because those expand the product and testing scope beyond the stage goal.
 - Output box-crop results as a new `processedImageUri` so the original selected image remains intact, downstream image description and sharing use the processed result, and `恢复原图` can continue clearing only the processed image state.
+
+## 2026-07-05 - Stage 14.7 History Performance Fix
+
+- Keep the History page on `LazyColumn` with stable item IDs because the list should compose only visible rows while preserving delete, favorite, reuse, regenerate, share, and save actions.
+- Move generated-image thumbnail decrypt/decode work out of the composable body because synchronous file IO and bitmap decoding can make tab switching feel blocked when image history exists.
+- Add an in-memory thumbnail cache keyed by generated image file name so revisiting visible image rows can reuse small bitmaps without writing plaintext thumbnails to long-term storage.
+- Decode only bounded thumbnails for list display because history rows do not need full-size generated images; full image share and gallery export continue to use the existing encrypted file flow.
+- Apply the same asynchronous preview rule to the Create page image-generation result card because switching back to Create should not synchronously decode the generated image preview before showing the result actions.
+- Keep save/share on the existing full-image path because preview thumbnails are only for UI display and must not replace user-exported image quality.

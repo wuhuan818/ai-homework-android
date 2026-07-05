@@ -442,13 +442,13 @@ Human verification points:
 - Check image prompt examples, optimization, apply/keep behavior, and manual image generation.
 - Check text result “生成配图” switches to image generation without auto-calling the model.
 - Check selected-image processing still supports rotation, watermark, black-and-white filter, center crop, restore original, and share.
-- Check edit-page “应用这个版本 / 不使用” copy and existing save behavior.
+- Check edit-page “应用 / 不使用” copy and existing save behavior.
 
 AI risk notes:
 
 - Real prompt optimization quality depends on the configured text model.
 - Visual layout still needs user real-device judgment, especially small-screen Chinese wrapping.
-- Gesture crop, free crop, crop preview, and drawing remain intentionally unimplemented.
+- At this point, free crop, crop preview refinements, and drawing remained intentionally unimplemented; gesture box crop was later added in Stage 14.6.
 
 ## 2026-07-04 - Stage 14.4 Creation Structure Polish
 
@@ -459,7 +459,7 @@ Human raised:
 - “生成配图”需要增加“整理为图片提示词”的确认步骤。
 - 暂未发现新的按钮换行问题。
 - 历史 / 收藏 / 再次生成链路暂时正常。
-- 手势框选裁剪应作为后续单独阶段。
+- 手势框选裁剪应作为后续单独阶段；该能力后来已在 Stage 14.6 完成最低可用版本。
 
 Codex generated or modified:
 
@@ -482,7 +482,7 @@ AI risk notes:
 
 - Real prompt整理 quality depends on the configured text model.
 - Visual spacing and button wrapping still need user real-device judgment.
-- Gesture crop, deeper center-crop work, drawing, inpaint, image-to-image, and multi-image generation remain intentionally unimplemented.
+- At this point, gesture crop and deeper center-crop work were deferred; gesture box crop was later added in Stage 14.6, while drawing, inpaint, image-to-image, and multi-image generation remain intentionally unimplemented.
 
 ## 2026-07-05 - Stage 14.6 Gesture Box Crop
 
@@ -507,3 +507,43 @@ Human verification points:
 - Check horizontal, vertical, and square image crop alignment on a real device.
 - Check crop result preview, image description, rotate, watermark, black-and-white filter, center crop, restore original, and share after box crop.
 - Re-test image generation, encrypted image history, history, favorites, reuse, regenerate, and settings.
+
+## 2026-07-05 - Stage 14.7 History Performance Fix
+
+Human raised:
+
+- 历史记录较多时，从其他页面切换到历史页会出现明显卡顿。
+- 本轮只修复历史页性能问题，不新增功能，不改历史数据结构或加密格式。
+
+Codex generated or modified:
+
+- Kept the existing `LazyColumn` history list and stable `item.id` keys.
+- Moved image history thumbnail URI resolution, decrypt-to-cache, and bitmap decode into a `Dispatchers.IO` coroutine launched per visible image row.
+- Added a small in-memory thumbnail cache keyed by image file name.
+- Decoded list thumbnails to a bounded size for history rows while leaving share, save-to-gallery, delete, favorite, reuse, and regenerate callbacks unchanged.
+
+Human verification points:
+
+- Check tab switching into History when many text and image records exist.
+- Check image thumbnails appear progressively without blocking text details and action buttons.
+- Re-test favorites filter, text reuse, image regenerate, share, save to gallery, single delete, and clear history.
+
+## 2026-07-05 - Stage 14.7 Create Image Result Preview Performance Fix
+
+Human raised:
+
+- 创作页处于图片生成且已有图片结果时，从其他页面切回创作页会出现卡顿。
+- 本轮只优化图片结果预览，不改图片生成、加密存储、历史结构或导出操作。
+
+Codex generated or modified:
+
+- Added an asynchronous generated-image preview path for the Create page result card.
+- Resolved generated image files and decoded bounded preview bitmaps on `Dispatchers.IO`.
+- Added an in-memory preview cache keyed by generated image file name, with a result ID fallback for legacy preview-only cases.
+- Kept save-to-gallery, share, favorite, regenerate, and history storage on the existing full-image behavior.
+
+Human verification points:
+
+- Generate an image, switch away from Create, then switch back and check that the result card appears before preview loading finishes.
+- Confirm preview loading failure does not hide save, share, favorite, or regenerate actions.
+- Re-test save to gallery and share to confirm exported images still use the full generated image path.

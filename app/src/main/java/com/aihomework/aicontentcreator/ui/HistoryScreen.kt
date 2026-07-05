@@ -6,6 +6,7 @@ import android.graphics.BitmapFactory
 import android.graphics.ImageDecoder
 import android.net.Uri
 import android.os.Build
+import android.util.LruCache
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -40,6 +41,8 @@ import com.aihomework.aicontentcreator.data.image.GeneratedImageFileStore
 import com.aihomework.aicontentcreator.data.model.HistoryContentType
 import com.aihomework.aicontentcreator.data.model.HistoryItem
 import com.aihomework.aicontentcreator.ui.state.HistoryUiState
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -62,6 +65,7 @@ fun HistoryScreen(
     var pendingDeleteItem by remember { mutableStateOf<HistoryItem?>(null) }
     var showClearConfirmation by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
+    val thumbnailCache = remember { HistoryThumbnailCache() }
     val visibleItems = remember(state.items, selectedFilter) {
         when (selectedFilter) {
             HistoryFilter.All -> state.items
@@ -161,6 +165,7 @@ fun HistoryScreen(
                     items(visibleItems, key = { it.id }) { item ->
                         HistoryCard(
                             item = item,
+                            thumbnailCache = thumbnailCache,
                             onOpenForEdit = { onOpenForEdit(item) },
                             onReuseText = { onReuseText(item) },
                             onRegenerateImage = { onRegenerateImage(item) },
@@ -188,6 +193,7 @@ fun HistoryScreen(
 @Composable
 private fun HistoryCard(
     item: HistoryItem,
+    thumbnailCache: HistoryThumbnailCache,
     onOpenForEdit: () -> Unit,
     onReuseText: () -> Unit,
     onRegenerateImage: () -> Unit,
@@ -217,7 +223,10 @@ private fun HistoryCard(
             }
             Text(formatTime(item.createdAtMillis), style = MaterialTheme.typography.bodySmall)
             if (item.contentType == HistoryContentType.IMAGE) {
-                HistoryImagePreview(fileName = item.imageFileName)
+                HistoryImagePreview(
+                    fileName = item.imageFileName,
+                    thumbnailCache = thumbnailCache
+                )
                 Text("风格：${item.imageGenerationStyle?.displayName ?: "未记录"}")
                 Text("比例：${item.imageAspectRatio?.displayName ?: "未记录"}")
                 Text(item.summary, maxLines = 3)
@@ -313,24 +322,68 @@ private fun HistoryCard(
 }
 
 @Composable
-private fun HistoryImagePreview(fileName: String?) {
+private fun HistoryImagePreview(
+    fileName: String?,
+    thumbnailCache: HistoryThumbnailCache
+) {
     val context = LocalContext.current
-    val uri = remember(fileName) {
-        GeneratedImageFileStore(context.applicationContext).uriFor(fileName)
+    var bitmap by remember(fileName) {
+        mutableStateOf(fileName?.let { thumbnailCache.get(it) })
     }
-    val bitmap = remember(uri) {
-        uri?.let { loadHistoryBitmap(context, it) }
+    var isLoading by remember(fileName) {
+        mutableStateOf(fileName != null && bitmap == null)
     }
-    bitmap?.let {
-        Image(
-            bitmap = it.asImageBitmap(),
-            contentDescription = "图片作品缩略图",
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(160.dp),
-            contentScale = ContentScale.Fit
-        )
-    } ?: Text("图片文件不可用")
+    var loadFailed by remember(fileName) {
+        mutableStateOf(fileName == null)
+    }
+
+    LaunchedEffect(fileName) {
+        if (fileName.isNullOrBlank()) {
+            bitmap = null
+            isLoading = false
+            loadFailed = true
+            return@LaunchedEffect
+        }
+
+        thumbnailCache.get(fileName)?.let {
+            bitmap = it
+            isLoading = false
+            loadFailed = false
+            return@LaunchedEffect
+        }
+
+        isLoading = true
+        loadFailed = false
+        val loadedBitmap = withContext(Dispatchers.IO) {
+            val appContext = context.applicationContext
+            val uri = GeneratedImageFileStore(appContext).uriFor(fileName)
+            uri?.let { loadHistoryThumbnail(appContext, it) }
+        }
+        if (loadedBitmap == null) {
+            bitmap = null
+            loadFailed = true
+        } else {
+            thumbnailCache.put(fileName, loadedBitmap)
+            bitmap = loadedBitmap
+            loadFailed = false
+        }
+        isLoading = false
+    }
+
+    when {
+        bitmap != null -> {
+            Image(
+                bitmap = bitmap!!.asImageBitmap(),
+                contentDescription = "图片作品缩略图",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(160.dp),
+                contentScale = ContentScale.Fit
+            )
+        }
+        isLoading -> Text("图片缩略图加载中...")
+        loadFailed -> Text("图片文件不可用")
+    }
 }
 
 private enum class HistoryFilter(val label: String) {
@@ -342,19 +395,68 @@ private fun formatTime(timeMillis: Long): String {
     return SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date(timeMillis))
 }
 
-private fun loadHistoryBitmap(context: Context, uri: Uri): Bitmap? {
+private class HistoryThumbnailCache {
+    private val cache = object : LruCache<String, Bitmap>(HISTORY_THUMBNAIL_CACHE_KB) {
+        override fun sizeOf(key: String, value: Bitmap): Int {
+            return maxOf(1, value.byteCount / 1024)
+        }
+    }
+
+    fun get(fileName: String): Bitmap? = cache.get(fileName)
+
+    fun put(fileName: String, bitmap: Bitmap) {
+        cache.put(fileName, bitmap)
+    }
+}
+
+private fun loadHistoryThumbnail(context: Context, uri: Uri): Bitmap? {
     return try {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             val source = ImageDecoder.createSource(context.contentResolver, uri)
-            ImageDecoder.decodeBitmap(source) { decoder, _, _ ->
+            ImageDecoder.decodeBitmap(source) { decoder, info, _ ->
                 decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
+                val width = info.size.width
+                val height = info.size.height
+                if (width > HISTORY_THUMBNAIL_MAX_DIMENSION || height > HISTORY_THUMBNAIL_MAX_DIMENSION) {
+                    val scale = minOf(
+                        HISTORY_THUMBNAIL_MAX_DIMENSION.toFloat() / width,
+                        HISTORY_THUMBNAIL_MAX_DIMENSION.toFloat() / height
+                    )
+                    decoder.setTargetSize(
+                        maxOf(1, (width * scale).toInt()),
+                        maxOf(1, (height * scale).toInt())
+                    )
+                }
             }
         } else {
+            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
             context.contentResolver.openInputStream(uri)?.use { stream ->
-                BitmapFactory.decodeStream(stream)
+                BitmapFactory.decodeStream(stream, null, bounds)
+            } ?: return null
+
+            if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
+
+            val options = BitmapFactory.Options().apply {
+                inSampleSize = calculateHistoryThumbnailSampleSize(bounds.outWidth, bounds.outHeight)
+            }
+            context.contentResolver.openInputStream(uri)?.use { stream ->
+                BitmapFactory.decodeStream(stream, null, options)
             }
         }
     } catch (error: Exception) {
         null
     }
 }
+
+private fun calculateHistoryThumbnailSampleSize(width: Int, height: Int): Int {
+    var sampleSize = 1
+    while (width / sampleSize > HISTORY_THUMBNAIL_MAX_DIMENSION ||
+        height / sampleSize > HISTORY_THUMBNAIL_MAX_DIMENSION
+    ) {
+        sampleSize *= 2
+    }
+    return sampleSize
+}
+
+private const val HISTORY_THUMBNAIL_MAX_DIMENSION = 320
+private const val HISTORY_THUMBNAIL_CACHE_KB = 8 * 1024
