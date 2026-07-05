@@ -4,7 +4,7 @@
 | --- | --- |
 | README with goals, non-goals, and completion criteria | Provided in Chinese and English |
 | Constraints and decisions, within 500 Chinese characters for CN | Provided; Chinese body is within the limit |
-| Validation evidence: logs, screenshots, data, comparison | Evidence docs, logs, user-supplied screenshots, and recording provided; local-encryption adb logs added |
+| Validation evidence: logs, screenshots, data, comparison | Evidence docs, logs, 15 user-supplied screenshots, and recording provided; local-encryption adb logs and screenshots added |
 | AI collaboration explanation | Provided in Chinese and English |
 | Reproducible code repository | GitHub link, final branch, and commit provided |
 | APK | Debug APK provided for assignment review installation |
@@ -17,6 +17,6 @@
 | Favorites, history, system sharing | Covered |
 | Local encrypted storage evidence | Android Keystore + AES-GCM verification method documented, with adb run-as plaintext-search logs and encrypted image file-header logs added |
 | Error scenario | Missing key, network/API errors, image load failure, and image generation failure documented |
-| Screenshots or recording | 13 user-supplied screenshots and 1 recording are present and require final review |
+| Screenshots or recording | 15 user-supplied screenshots and 1 recording are present and require final review |
 | No real API keys | Sensitive-content check performed; no real key included in final package |
 | No local.properties, build, .gradle, or app/build | Final directory and zip exclude these paths |
