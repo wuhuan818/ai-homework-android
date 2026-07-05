@@ -102,3 +102,10 @@
 - Add only low-risk image processing additions: black-and-white filter and center crop, both implemented with native Android Bitmap APIs.
 - Change edit rewrite into a candidate comparison flow so original text is not overwritten until the user applies the result.
 - Make history a re-creation entry by restoring text or image-generation settings without automatically calling a model.
+
+## Stage 14.5 Secure Local Storage
+
+- Keep Android Keystore backed AES-GCM as the local encryption direction instead of adding an account system, cloud sync, SQLCipher, Room migration, or EncryptedSharedPreferences migration in this stage.
+- Store new generated image binaries as encrypted app-private files and decrypt only temporary cache copies for preview, sharing, and user-initiated gallery export.
+- Keep legacy generated image files readable when present so existing history does not break after the storage change.
+- Disable Android automatic backup for the app so encrypted SharedPreferences and encrypted image files are not restored onto a device without the matching Keystore keys.

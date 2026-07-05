@@ -2,19 +2,14 @@ package com.aihomework.aicontentcreator.data.settings
 
 import android.content.Context
 import android.content.SharedPreferences
-import android.security.keystore.KeyGenParameterSpec
-import android.security.keystore.KeyProperties
-import android.util.Base64
-import java.security.KeyStore
-import javax.crypto.Cipher
-import javax.crypto.KeyGenerator
-import javax.crypto.SecretKey
-import javax.crypto.spec.GCMParameterSpec
+import com.aihomework.aicontentcreator.data.security.CryptoManager
+import com.aihomework.aicontentcreator.data.security.EncryptedPayload
 
 class SettingsRepository(context: Context) {
     private val appContext = context.applicationContext
     private val prefs: SharedPreferences =
         appContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    private val cryptoManager = CryptoManager(API_KEY_ALIAS)
 
     fun loadSettings(): AppSettings {
         val profiles = AppSettings.defaultProfiles().map { defaultProfile ->
@@ -103,23 +98,25 @@ class SettingsRepository(context: Context) {
         val cleanKey = apiKey.trim()
         if (cleanKey.isBlank()) return false
 
-        return runCatching {
-            val cipher = Cipher.getInstance(TRANSFORMATION)
-            cipher.init(Cipher.ENCRYPT_MODE, getOrCreateSecretKey())
-            val encrypted = cipher.doFinal(cleanKey.toByteArray(Charsets.UTF_8))
-            prefs.edit()
-                .putString(apiKeyCipherTextKey(profileId), Base64.encodeToString(encrypted, Base64.NO_WRAP))
-                .putString(apiKeyIvKey(profileId), Base64.encodeToString(cipher.iv, Base64.NO_WRAP))
-                .apply()
-        }.isSuccess
+        return cryptoManager.encrypt(cleanKey)
+            .map { payload ->
+                prefs.edit()
+                    .putInt(apiKeyVersionKey(profileId), payload.version)
+                    .putString(apiKeyCipherTextKey(profileId), payload.cipherText)
+                    .putString(apiKeyIvKey(profileId), payload.iv)
+                    .apply()
+            }
+            .isSuccess
     }
 
     fun clearApiKey(profileId: String) {
         val editor = prefs.edit()
+            .remove(apiKeyVersionKey(profileId))
             .remove(apiKeyCipherTextKey(profileId))
             .remove(apiKeyIvKey(profileId))
         if (profileId == AppSettings.DEFAULT_PROFILE_ID) {
             editor
+                .remove(KEY_API_KEY_VERSION)
                 .remove(KEY_API_KEY_CIPHER_TEXT)
                 .remove(KEY_API_KEY_IV)
         }
@@ -143,13 +140,15 @@ class SettingsRepository(context: Context) {
             }
             ?: return null
 
-        return runCatching {
-            val encrypted = Base64.decode(encryptedText, Base64.NO_WRAP)
-            val iv = Base64.decode(ivText, Base64.NO_WRAP)
-            val cipher = Cipher.getInstance(TRANSFORMATION)
-            cipher.init(Cipher.DECRYPT_MODE, getOrCreateSecretKey(), GCMParameterSpec(GCM_TAG_BITS, iv))
-            String(cipher.doFinal(encrypted), Charsets.UTF_8)
-        }.getOrNull()
+        val version = prefs.getInt(
+            apiKeyVersionKey(profileId),
+            if (profileId == AppSettings.DEFAULT_PROFILE_ID) {
+                prefs.getInt(KEY_API_KEY_VERSION, CryptoManager.PAYLOAD_VERSION)
+            } else {
+                CryptoManager.PAYLOAD_VERSION
+            }
+        )
+        return cryptoManager.decrypt(EncryptedPayload(encryptedText, ivText, version)).getOrNull()
     }
 
     private fun loadProfileValue(
@@ -191,30 +190,9 @@ class SettingsRepository(context: Context) {
         return hasProfileKey || hasLegacyKey
     }
 
-    private fun getOrCreateSecretKey(): SecretKey {
-        val keyStore = KeyStore.getInstance(KEYSTORE_PROVIDER).apply { load(null) }
-        val existing = keyStore.getEntry(KEY_ALIAS, null) as? KeyStore.SecretKeyEntry
-        if (existing != null) return existing.secretKey
-
-        val keyGenerator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, KEYSTORE_PROVIDER)
-        val keySpec = KeyGenParameterSpec.Builder(
-            KEY_ALIAS,
-            KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
-        )
-            .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
-            .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
-            .setRandomizedEncryptionRequired(true)
-            .build()
-        keyGenerator.init(keySpec)
-        return keyGenerator.generateKey()
-    }
-
     private companion object {
         const val PREFS_NAME = "ai_content_creator_settings"
-        const val KEYSTORE_PROVIDER = "AndroidKeyStore"
-        const val KEY_ALIAS = "ai_content_creator_api_key"
-        const val TRANSFORMATION = "AES/GCM/NoPadding"
-        const val GCM_TAG_BITS = 128
+        const val API_KEY_ALIAS = "ai_content_creator_api_key"
         const val KEY_MODE = "mode"
         const val KEY_ACTIVE_PROFILE_ID = "active_profile_id"
         const val KEY_BASE_URL = "base_url"
@@ -223,6 +201,7 @@ class SettingsRepository(context: Context) {
         const val KEY_IMAGE_GENERATION_MODEL = "image_generation_model"
         const val KEY_IMAGE_GENERATION_ENDPOINT = "image_generation_endpoint"
         const val KEY_IMAGE_GENERATION_API_TYPE = "image_generation_api_type"
+        const val KEY_API_KEY_VERSION = "api_key_version"
         const val KEY_API_KEY_CIPHER_TEXT = "api_key_cipher_text"
         const val KEY_API_KEY_IV = "api_key_iv"
         const val PROFILE_NAME = "name"
@@ -243,6 +222,10 @@ class SettingsRepository(context: Context) {
 
         fun apiKeyIvKey(profileId: String): String {
             return "profile_${profileId}_api_key_iv"
+        }
+
+        fun apiKeyVersionKey(profileId: String): String {
+            return "profile_${profileId}_api_key_version"
         }
     }
 }

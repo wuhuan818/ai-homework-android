@@ -1,5 +1,17 @@
 # Decisions
 
+## 2026-07-05 - Stage 14.5 Secure Local Storage
+
+- Keep Android Keystore + AES-GCM because the app already uses that scheme for encrypted history and API keys; reusing and strengthening it is lower risk than migrating to EncryptedSharedPreferences during this stage.
+- Explicitly use 256-bit AES keys, randomized IVs, and 128-bit GCM authentication tags for newly generated Keystore keys.
+- Add versioned encrypted payloads so later migrations can distinguish storage formats while old history and API key payloads without a stored payload version still read through the legacy-compatible path.
+- Encrypt generated image binaries because image metadata alone was not enough for the local encrypted storage requirement; new image files are stored under `files/generated_images_encrypted/`.
+- Keep old plaintext generated-image files readable from `files/generated_images/` when present, so older image history records do not crash or disappear solely because the file format changed.
+- Keep history as a single encrypted JSON blob because the current app needs a small local work list, not database search, paging, schema migration, or cloud sync.
+- Temporarily decrypt generated images into `cache/decrypted_generated_images/` for preview, sharing through FileProvider, and user-initiated gallery export; long-term storage remains encrypted.
+- Disable Android automatic backup with `android:allowBackup="false"` to avoid restoring encrypted SharedPreferences or encrypted image files onto a device that does not have the original Keystore keys.
+- Security boundary: this protects ordinary local file inspection scenarios, but it does not claim protection from root access, a malicious OS, runtime screenshots, memory inspection, or external copies after the user exports/shares content.
+
 ## 2026-06-29 - Project Skeleton
 
 - Use Kotlin and Jetpack Compose for the Android UI.

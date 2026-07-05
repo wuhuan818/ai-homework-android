@@ -3,6 +3,9 @@
     <cache-path
         name="shared_images"
         path="shared_images/" />
+    <cache-path
+        name="decrypted_generated_images"
+        path="decrypted_generated_images/" />
     <files-path
         name="generated_images"
         path="generated_images/" />

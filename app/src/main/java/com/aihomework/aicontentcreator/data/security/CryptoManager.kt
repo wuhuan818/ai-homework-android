@@ -11,7 +11,14 @@ import javax.crypto.spec.GCMParameterSpec
 
 data class EncryptedPayload(
     val cipherText: String,
-    val iv: String
+    val iv: String,
+    val version: Int = CryptoManager.PAYLOAD_VERSION
+)
+
+data class ByteEncryptedPayload(
+    val cipherText: ByteArray,
+    val iv: ByteArray,
+    val version: Int = CryptoManager.PAYLOAD_VERSION
 )
 
 class CryptoManager(
@@ -24,7 +31,8 @@ class CryptoManager(
             val encrypted = cipher.doFinal(plainText.toByteArray(Charsets.UTF_8))
             EncryptedPayload(
                 cipherText = Base64.encodeToString(encrypted, Base64.NO_WRAP),
-                iv = Base64.encodeToString(cipher.iv, Base64.NO_WRAP)
+                iv = Base64.encodeToString(cipher.iv, Base64.NO_WRAP),
+                version = PAYLOAD_VERSION
             )
         }
     }
@@ -36,6 +44,30 @@ class CryptoManager(
             val cipher = Cipher.getInstance(TRANSFORMATION)
             cipher.init(Cipher.DECRYPT_MODE, getOrCreateSecretKey(), GCMParameterSpec(GCM_TAG_BITS, iv))
             String(cipher.doFinal(encrypted), Charsets.UTF_8)
+        }
+    }
+
+    fun encryptBytes(bytes: ByteArray): Result<ByteEncryptedPayload> {
+        return runCatching {
+            val cipher = Cipher.getInstance(TRANSFORMATION)
+            cipher.init(Cipher.ENCRYPT_MODE, getOrCreateSecretKey())
+            ByteEncryptedPayload(
+                cipherText = cipher.doFinal(bytes),
+                iv = cipher.iv,
+                version = PAYLOAD_VERSION
+            )
+        }
+    }
+
+    fun decryptBytes(payload: ByteEncryptedPayload): Result<ByteArray> {
+        return runCatching {
+            val cipher = Cipher.getInstance(TRANSFORMATION)
+            cipher.init(
+                Cipher.DECRYPT_MODE,
+                getOrCreateSecretKey(),
+                GCMParameterSpec(GCM_TAG_BITS, payload.iv)
+            )
+            cipher.doFinal(payload.cipherText)
         }
     }
 
@@ -51,16 +83,20 @@ class CryptoManager(
         )
             .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
             .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+            .setKeySize(AES_KEY_SIZE_BITS)
             .setRandomizedEncryptionRequired(true)
             .build()
         keyGenerator.init(keySpec)
         return keyGenerator.generateKey()
     }
 
-    private companion object {
+    companion object {
+        const val PAYLOAD_VERSION = 1
+
+        private const val AES_KEY_SIZE_BITS = 256
         const val KEYSTORE_PROVIDER = "AndroidKeyStore"
-        const val KEY_ALIAS = "ai_content_creator_history"
-        const val TRANSFORMATION = "AES/GCM/NoPadding"
-        const val GCM_TAG_BITS = 128
+        private const val KEY_ALIAS = "ai_content_creator_history"
+        private const val TRANSFORMATION = "AES/GCM/NoPadding"
+        private const val GCM_TAG_BITS = 128
     }
 }

@@ -2,6 +2,29 @@
 
 This project is built with AI assistance. AI is used for environment checks, project scaffolding, documentation drafts, and implementation support.
 
+## 2026-07-05 - Stage 14.5 Secure Local Storage
+
+Human raised:
+
+- The contest requirement emphasizes locally encrypted storage for user content.
+- The user asked whether the existing encrypted storage direction was reasonable and whether it still needed improvement.
+- This stage should strengthen local encryption and backup handling before later gesture-crop work.
+
+Codex generated or modified:
+
+- Kept the existing Android Keystore + AES-GCM direction and strengthened `CryptoManager` with explicit AES key size, payload versioning, and byte-array encryption.
+- Added encrypted generated-image file storage for new image outputs.
+- Kept legacy generated-image file reads compatible so old history records do not crash.
+- Disabled Android automatic backup for the app to avoid restoring encrypted local data without matching Keystore keys.
+- Updated README, decision notes, and security documentation with key management, encryption boundaries, backup policy, and verification steps.
+
+Human verification points:
+
+- Verify text history containing `LOCAL-VERIFY-2026` reloads after app restart and does not appear as plaintext in local SharedPreferences.
+- Verify API Key status survives app restart without displaying the plaintext key.
+- Verify generated images preview, share, save to gallery, favorite, history, regenerate, delete, and clear-history paths still work.
+- Verify old history data, if present on the device, does not crash the app.
+
 Rules:
 
 - Do not paste API keys, passwords, or tokens into prompts.

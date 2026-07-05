@@ -753,6 +753,7 @@ private fun AIContentCreatorApp() {
                                     createState = createState.copy(message = "暂无可分享内容。")
                                 } else if (result.contentType == HistoryContentType.IMAGE) {
                                     val uri = result.imagePreviewUri
+                                        ?: generatedImageFileStore.uriFor(result.imageFileName)?.toString()
                                     if (uri.isNullOrBlank()) {
                                         createState = createState.copy(message = "暂无可分享图片。")
                                     } else {
@@ -771,7 +772,9 @@ private fun AIContentCreatorApp() {
                                 }
                             },
                             onSaveImage = {
-                                val uri = createState.result?.imagePreviewUri
+                                val result = createState.result
+                                val uri = result?.imagePreviewUri
+                                    ?: generatedImageFileStore.uriFor(result?.imageFileName)?.toString()
                                 if (uri.isNullOrBlank()) {
                                     createState = createState.copy(message = "暂无可保存图片。")
                                 } else {

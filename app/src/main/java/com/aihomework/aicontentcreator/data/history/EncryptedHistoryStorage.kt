@@ -38,7 +38,8 @@ class EncryptedHistoryStorage(
             return HistoryLoadResult(emptyList(), HistoryStorageStatus.NotInitialized)
         }
 
-        val json = cryptoManager.decrypt(EncryptedPayload(cipherText, iv)).getOrElse {
+        val payloadVersion = prefs.getInt(KEY_PAYLOAD_VERSION, CryptoManager.PAYLOAD_VERSION)
+        val json = cryptoManager.decrypt(EncryptedPayload(cipherText, iv, payloadVersion)).getOrElse {
             return HistoryLoadResult(emptyList(), HistoryStorageStatus.LoadFailed)
         }
         val items = runCatching { deserializeHistory(json) }.getOrElse {
@@ -54,6 +55,7 @@ class EncryptedHistoryStorage(
         }
         prefs.edit()
             .putInt(KEY_VERSION, STORAGE_VERSION)
+            .putInt(KEY_PAYLOAD_VERSION, payload.version)
             .putLong(KEY_UPDATED_AT, System.currentTimeMillis())
             .putString(KEY_CIPHER_TEXT, payload.cipherText)
             .putString(KEY_IV, payload.iv)
@@ -64,6 +66,7 @@ class EncryptedHistoryStorage(
     fun clearHistory() {
         prefs.edit()
             .remove(KEY_VERSION)
+            .remove(KEY_PAYLOAD_VERSION)
             .remove(KEY_UPDATED_AT)
             .remove(KEY_CIPHER_TEXT)
             .remove(KEY_IV)
@@ -132,6 +135,7 @@ class EncryptedHistoryStorage(
     private companion object {
         const val PREFS_NAME = "ai_content_creator_history"
         const val KEY_VERSION = "version"
+        const val KEY_PAYLOAD_VERSION = "payload_version"
         const val KEY_UPDATED_AT = "updated_at"
         const val KEY_CIPHER_TEXT = "history_cipher_text"
         const val KEY_IV = "history_iv"
