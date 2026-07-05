@@ -108,6 +108,7 @@ private fun AIContentCreatorApp() {
             createState = createState.copy(
                 selectedImageUri = uri.toString(),
                 processedImageUri = null,
+                gestureCropSourceUri = null,
                 imageProcessingMessage = "已选择图片，可继续旋转或添加文字水印。",
                 imageUploadNotice = null,
                 input = createState.input.ifBlank { "已选择图片" },
@@ -144,6 +145,7 @@ private fun AIContentCreatorApp() {
                                     input = "",
                                     selectedImageUri = null,
                                     processedImageUri = null,
+                                    gestureCropSourceUri = null,
                                     imageProcessingMessage = null,
                                     imageUploadNotice = null,
                                     textStyle = TextCreationStyle.defaultFor(scenario),
@@ -258,6 +260,7 @@ private fun AIContentCreatorApp() {
                                             },
                                             selectedImageUri = result.uri.toString(),
                                             processedImageUri = null,
+                                            gestureCropSourceUri = null,
                                             isImageProcessing = false,
                                             imageProcessingMessage = "已使用内置示例图片，可用于演示图片描述。",
                                             imageUploadNotice = null,
@@ -332,6 +335,58 @@ private fun AIContentCreatorApp() {
                                             processedImageUri = result.uri.toString(),
                                             isImageProcessing = false,
                                             imageProcessingMessage = "黑白滤镜已应用。",
+                                            imageUploadNotice = null
+                                        )
+                                    } else {
+                                        createState.copy(
+                                            isImageProcessing = false,
+                                            imageProcessingMessage = result.errorMessage,
+                                            imageUploadNotice = null,
+                                            message = result.errorMessage
+                                        )
+                                    }
+                                }
+                            },
+                            onOpenGestureCrop = {
+                                val sourceUri = createState.processedImageUri ?: createState.selectedImageUri
+                                if (sourceUri == null) {
+                                    createState = createState.copy(message = "请先选择图片。")
+                                } else {
+                                    createState = createState.copy(
+                                        gestureCropSourceUri = sourceUri,
+                                        imageProcessingMessage = null
+                                    )
+                                }
+                            },
+                            onDismissGestureCrop = {
+                                createState = createState.copy(gestureCropSourceUri = null)
+                            },
+                            onApplyGestureCrop = { cropRect ->
+                                val sourceUri = createState.gestureCropSourceUri
+                                    ?: createState.processedImageUri
+                                    ?: createState.selectedImageUri
+                                if (sourceUri == null) {
+                                    createState = createState.copy(
+                                        gestureCropSourceUri = null,
+                                        message = "请先选择图片。"
+                                    )
+                                    return@CreateScreen
+                                }
+                                scope.launch {
+                                    createState = createState.copy(
+                                        gestureCropSourceUri = null,
+                                        isImageProcessing = true,
+                                        imageProcessingMessage = "正在框选裁剪图片...",
+                                        imageUploadNotice = null
+                                    )
+                                    val result = withContext(Dispatchers.Default) {
+                                        imageProcessor.cropImage(sourceUri, cropRect)
+                                    }
+                                    createState = if (result.uri != null) {
+                                        createState.copy(
+                                            processedImageUri = result.uri.toString(),
+                                            isImageProcessing = false,
+                                            imageProcessingMessage = "已完成框选裁剪。",
                                             imageUploadNotice = null
                                         )
                                     } else {

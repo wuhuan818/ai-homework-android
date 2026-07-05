@@ -109,3 +109,11 @@
 - Store new generated image binaries as encrypted app-private files and decrypt only temporary cache copies for preview, sharing, and user-initiated gallery export.
 - Keep legacy generated image files readable when present so existing history does not break after the storage change.
 - Disable Android automatic backup for the app so encrypted SharedPreferences and encrypted image files are not restored onto a device without the matching Keystore keys.
+
+## Stage 14.6 Gesture Box Crop
+
+- Add gesture box crop as a focused stage because manual crop needs touch handling, fitted-preview coordinate mapping, and real-device validation beyond quick center crop.
+- Keep existing center crop as quick crop for fixed ratios while adding box crop for user-selected regions.
+- Implement only lightweight P0 gestures: drag the crop box and resize from the lower-right handle, without a large crop dependency.
+- Do not add multi-touch zoom, rotated crop boxes, drawing, stickers, image-to-image, inpaint, or a full image editor in this stage.
+- Save crop output as a new processed image Uri so the original selected image is not overwritten and restore original still clears only processed state.

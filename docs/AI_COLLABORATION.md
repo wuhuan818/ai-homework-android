@@ -483,3 +483,27 @@ AI risk notes:
 - Real prompt整理 quality depends on the configured text model.
 - Visual spacing and button wrapping still need user real-device judgment.
 - Gesture crop, deeper center-crop work, drawing, inpaint, image-to-image, and multi-image generation remain intentionally unimplemented.
+
+## 2026-07-05 - Stage 14.6 Gesture Box Crop
+
+Human raised:
+
+- 用户明确希望最终支持手势框选裁剪。
+- 手势裁剪复杂度较高，因此作为 14-6 单独阶段。
+- 本阶段目标是实现最低可用框选裁剪，而不是完整图片编辑器。
+- 继续保持用户真机手测流程。
+
+Codex generated or modified:
+
+- Added a lightweight Compose crop dialog in the image description processing chain.
+- Added crop-box dragging and lower-right resize gestures with bounds constraints.
+- Added normalized crop-rectangle mapping from fitted preview coordinates to bitmap crop ratios.
+- Added a new image-processing crop operation that writes a new cache FileProvider Uri as `processedImageUri`.
+- Kept center crop, generated-image encrypted storage, history, favorites, reuse, regenerate, and settings flows out of scope for behavioral rewrites.
+
+Human verification points:
+
+- Check gallery-selected images and the built-in sample image.
+- Check horizontal, vertical, and square image crop alignment on a real device.
+- Check crop result preview, image description, rotate, watermark, black-and-white filter, center crop, restore original, and share after box crop.
+- Re-test image generation, encrypted image history, history, favorites, reuse, regenerate, and settings.

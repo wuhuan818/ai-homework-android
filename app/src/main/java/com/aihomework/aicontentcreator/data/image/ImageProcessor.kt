@@ -20,10 +20,18 @@ import java.io.File
 import java.io.FileOutputStream
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.roundToInt
 
 data class ImageProcessResult(
     val uri: Uri? = null,
     val errorMessage: String? = null
+)
+
+data class NormalizedCropRect(
+    val leftRatio: Float,
+    val topRatio: Float,
+    val widthRatio: Float,
+    val heightRatio: Float
 )
 
 class ImageProcessor(private val context: Context) {
@@ -88,6 +96,30 @@ class ImageProcessor(private val context: Context) {
         }
     }
 
+    fun cropImage(uriText: String, cropRect: NormalizedCropRect): ImageProcessResult {
+        return process(
+            uriText = uriText,
+            readFailureMessage = "裁剪失败，请重新选择图片后再试。",
+            processFailureMessage = "裁剪失败，请重新选择图片后再试。"
+        ) { source ->
+            val left = (cropRect.leftRatio.coerceIn(0f, 1f) * source.width)
+                .roundToInt()
+                .coerceIn(0, source.width - 1)
+            val top = (cropRect.topRatio.coerceIn(0f, 1f) * source.height)
+                .roundToInt()
+                .coerceIn(0, source.height - 1)
+            val maxWidth = source.width - left
+            val maxHeight = source.height - top
+            val cropWidth = (cropRect.widthRatio.coerceIn(0.01f, 1f) * source.width)
+                .roundToInt()
+                .coerceIn(1, maxWidth)
+            val cropHeight = (cropRect.heightRatio.coerceIn(0.01f, 1f) * source.height)
+                .roundToInt()
+                .coerceIn(1, maxHeight)
+            Bitmap.createBitmap(source, left, top, cropWidth, cropHeight)
+        }
+    }
+
     fun addTextWatermark(uriText: String, text: String): ImageProcessResult {
         val watermark = text.trim()
         if (watermark.isBlank()) {
@@ -112,9 +144,14 @@ class ImageProcessor(private val context: Context) {
         }
     }
 
-    private fun process(uriText: String, transform: (Bitmap) -> Bitmap): ImageProcessResult {
+    private fun process(
+        uriText: String,
+        readFailureMessage: String = "无法读取所选图片，请重新选择图片",
+        processFailureMessage: String = "图片处理失败，请重试",
+        transform: (Bitmap) -> Bitmap
+    ): ImageProcessResult {
         val source = decodeBitmap(uriText)
-            ?: return ImageProcessResult(errorMessage = "无法读取所选图片，请重新选择图片")
+            ?: return ImageProcessResult(errorMessage = readFailureMessage)
 
         return try {
             val output = transform(source)
@@ -129,7 +166,7 @@ class ImageProcessor(private val context: Context) {
             ImageProcessResult(errorMessage = "图片过大，处理失败，请选择较小的图片")
         } catch (error: Exception) {
             source.recycle()
-            ImageProcessResult(errorMessage = "图片处理失败，请重试")
+            ImageProcessResult(errorMessage = processFailureMessage)
         }
     }
 

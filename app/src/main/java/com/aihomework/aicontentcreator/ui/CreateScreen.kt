@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
+import com.aihomework.aicontentcreator.data.image.NormalizedCropRect
 import com.aihomework.aicontentcreator.data.model.CreationScenario
 import com.aihomework.aicontentcreator.data.model.ImageAspectRatio
 import com.aihomework.aicontentcreator.data.model.ImageDescriptionStyle
@@ -48,6 +49,9 @@ fun CreateScreen(
     onChooseImage: () -> Unit,
     onRotateImage: () -> Unit,
     onApplyGrayscale: () -> Unit,
+    onOpenGestureCrop: () -> Unit,
+    onDismissGestureCrop: () -> Unit,
+    onApplyGestureCrop: (NormalizedCropRect) -> Unit,
     onCropImage: (ImageAspectRatio) -> Unit,
     onWatermarkTextChanged: (String) -> Unit,
     onAddWatermark: () -> Unit,
@@ -78,6 +82,15 @@ fun CreateScreen(
             Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
             onMessageShown()
         }
+    }
+
+    state.gestureCropSourceUri?.let { cropSourceUri ->
+        ImageCropEditorDialog(
+            uriText = cropSourceUri,
+            isProcessing = state.isImageProcessing,
+            onDismiss = onDismissGestureCrop,
+            onApply = onApplyGestureCrop
+        )
     }
 
     Column(
@@ -156,6 +169,7 @@ fun CreateScreen(
                 onWatermarkTextChanged = onWatermarkTextChanged,
                 onApplyGrayscale = onApplyGrayscale,
                 onAddWatermark = onAddWatermark,
+                onOpenGestureCrop = onOpenGestureCrop,
                 onCropImage = onCropImage
             )
         }

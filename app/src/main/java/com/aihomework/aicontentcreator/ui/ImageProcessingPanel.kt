@@ -25,6 +25,7 @@ internal fun ImageProcessingPanel(
     onWatermarkTextChanged: (String) -> Unit,
     onApplyGrayscale: () -> Unit,
     onAddWatermark: () -> Unit,
+    onOpenGestureCrop: () -> Unit,
     onCropImage: (ImageAspectRatio) -> Unit
 ) {
     CreationSection(title = "图片基础处理") {
@@ -96,6 +97,13 @@ internal fun ImageProcessingPanel(
             }
 
             Text("裁剪", style = MaterialTheme.typography.titleSmall)
+            OutlinedButton(
+                modifier = Modifier.fillMaxWidth(),
+                onClick = onOpenGestureCrop,
+                enabled = !state.isImageProcessing
+            ) {
+                Text("框选裁剪")
+            }
             Row(
                 modifier = Modifier
                     .fillMaxWidth()

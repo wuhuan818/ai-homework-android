@@ -20,6 +20,7 @@ data class CreateUiState(
     val styleAdviceMessage: String? = null,
     val selectedImageUri: String? = null,
     val processedImageUri: String? = null,
+    val gestureCropSourceUri: String? = null,
     val watermarkText: String = "",
     val imageProcessingMessage: String? = null,
     val imageUploadNotice: String? = null,

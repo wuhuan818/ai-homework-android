@@ -26,6 +26,7 @@ internal fun ImageDescriptionPanel(
     onWatermarkTextChanged: (String) -> Unit,
     onApplyGrayscale: () -> Unit,
     onAddWatermark: () -> Unit,
+    onOpenGestureCrop: () -> Unit,
     onCropImage: (ImageAspectRatio) -> Unit
 ) {
     CreationSection(title = "描述风格") {
@@ -90,6 +91,7 @@ internal fun ImageDescriptionPanel(
         onWatermarkTextChanged = onWatermarkTextChanged,
         onApplyGrayscale = onApplyGrayscale,
         onAddWatermark = onAddWatermark,
+        onOpenGestureCrop = onOpenGestureCrop,
         onCropImage = onCropImage
     )
 }

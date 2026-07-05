@@ -176,3 +176,11 @@
 - Add a confirmation step before using text results for companion images because product copy or long social text may need to be整理成画面描述 before it is suitable for text-to-image prompting.
 - Add a separate `prepareImagePromptFromText` path instead of changing `optimizeImagePrompt` so the UI can keep `优化提示词` and `整理提示词` as distinct actions.
 - Keep gesture crop for a later stage because manual selection needs dedicated touch interaction, preview behavior, and real-device validation beyond this creation-page polish pass.
+
+## 2026-07-05 - Stage 14.6 Gesture Box Crop
+
+- Add gesture box crop as its own stage because manual crop needs touch interaction, fitted-image coordinate mapping, file output, and real-device validation that are riskier than quick center crop.
+- Keep center crop as quick crop because fixed 1:1 / 4:3 / 3:4 / 16:9 / 9:16 center crops are still useful one-tap actions and already work in the existing processing chain.
+- Implement only lightweight P0 gestures because dragging the crop rectangle and resizing from the lower-right handle covers the immediate need without introducing a large crop library.
+- Do not add multi-touch image zoom, rotated crop rectangles, drawing, stickers, inpaint, image-to-image, or a professional editor surface because those expand the product and testing scope beyond the stage goal.
+- Output box-crop results as a new `processedImageUri` so the original selected image remains intact, downstream image description and sharing use the processed result, and `恢复原图` can continue clearing only the processed image state.
