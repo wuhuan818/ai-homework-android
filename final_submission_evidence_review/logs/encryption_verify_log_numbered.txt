@@ -1,0 +1,9 @@
+﻿001 | Time: 2026-07-05 13:00:20 +08:00
+002 | Project: Tianjin--LingganGongfang--JiangLiangzhen
+003 | Package name: com.aihomework.aicontentcreator
+004 | Verification keyword: LOCAL-VERIFY-2026
+005 | Exact command: adb shell run-as com.aihomework.aicontentcreator sh -c "cd /data/data/com.aihomework.aicontentcreator && grep -R 'LOCAL-VERIFY-2026' shared_prefs files 2>/dev/null || echo NO_PLAINTEXT_MATCH"
+006 | Raw output:
+007 | NO_PLAINTEXT_MATCH
+008 | Result summary: NO_PLAINTEXT_MATCH
+009 | Conclusion: App private shared_prefs/files do not contain LOCAL-VERIFY-2026 in plaintext. This supports that the user content is not stored as directly readable plaintext in private persistent files.

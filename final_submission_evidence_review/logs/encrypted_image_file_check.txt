@@ -1,0 +1,20 @@
+﻿Time: 2026-07-05 15:11:12 +08:00
+Project: 灵感工坊
+Package name: com.aihomework.aicontentcreator
+Directory checked: /data/data/com.aihomework.aicontentcreator/files/generated_images_encrypted
+ls command: adb shell run-as com.aihomework.aicontentcreator ls -l /data/data/com.aihomework.aicontentcreator/files/generated_images_encrypted
+ls output:
+total 10496
+-rw------- 1 u0_a145 u0_a145 5857786 2026-07-05 11:54 encrypted_1783223696400_a5e6c2b2-f885-4d51-8d47-18bd6bfbf4b1.imgenc
+-rw------- 1 u0_a145 u0_a145 4874258 2026-07-05 12:03 encrypted_1783224183095_c8f2bf3d-ee90-4ac2-a59f-e339f971eaf6.imgenc
+file header command: adb shell run-as com.aihomework.aicontentcreator wc -c /data/data/com.aihomework.aicontentcreator/files/generated_images_encrypted/encrypted_1783223696400_a5e6c2b2-f885-4d51-8d47-18bd6bfbf4b1.imgenc; adb shell run-as com.aihomework.aicontentcreator od -An -tx1 -N 16 /data/data/com.aihomework.aicontentcreator/files/generated_images_encrypted/encrypted_1783223696400_a5e6c2b2-f885-4d51-8d47-18bd6bfbf4b1.imgenc
+selected file name: encrypted_1783223696400_a5e6c2b2-f885-4d51-8d47-18bd6bfbf4b1.imgenc
+file size: 5857786 bytes
+first 16 bytes output:
+41 49 43 49 00 00 00 01 00 00 00 0c b9 1b 40 e7
+Reference headers:
+- PNG usually starts with 89 50 4e 47
+- JPEG usually starts with ff d8 ff
+- WebP usually contains RIFF and WEBP
+Result summary: encrypted image file header is not a common plaintext image header.
+Conclusion: Generated images stored in the app private long-term directory are not directly readable as PNG/JPEG/WebP image files.

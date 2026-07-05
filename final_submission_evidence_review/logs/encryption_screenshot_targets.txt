@@ -1,0 +1,25 @@
+﻿Encryption screenshot targets for manual review
+
+1. Open: evidence\logs\encryption_verify_log_numbered.txt
+   Suggested screenshot lines:
+   - 003 | Package name
+   - 004 | Verification keyword
+   - 005 | Exact command
+   - 006-007 | Raw output
+   - 008 | Result summary
+   - 009 | Conclusion
+
+2. Open: evidence\logs\encrypted_image_file_check_numbered.txt
+   Suggested screenshot lines:
+   - 004 | Directory checked
+   - 005 | ls command
+   - 006-009 | ls output
+   - 010 | file header command
+   - 011 | selected file name
+   - 012 | file size
+   - 013-014 | first 16 bytes output
+   - 015-018 | Reference headers
+   - 019 | Result summary
+   - 020 | Conclusion
+
+Current image file-header evidence is complete. The selected .imgenc file header is not a PNG/JPEG/WebP plaintext image header.
