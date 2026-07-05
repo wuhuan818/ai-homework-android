@@ -34,7 +34,7 @@ app\build\outputs\apk\debug\app-debug.apk
 adb install -r app\build\outputs\apk\debug\app-debug.apk
 ```
 
-During final packaging, device `10AC8M0C61001B1` was visible and reported Android `14`. The install attempt returned `INSTALL_FAILED_ABORTED: User rejected permissions`, so a successful install log should be added after the user approves installation on the device.
+During final packaging, device 10AC8M0C61001B1 on Android 14 was detected. The debug APK was installed with adb install -r app\build\outputs\apk\debug\app-debug.apk, and the result was Success.
 
 ## API Configuration
 

@@ -4,6 +4,8 @@
 
 The human contributor made the topic choice, product direction, scope boundaries, real API configuration, real-device testing, and final trade-off decisions. Human feedback identified UI crowding, awkward button wrapping, incomplete prompt display, History/Create page performance issues, encryption boundaries, and crop interaction problems. The human also decided to defer accounts, cloud sync, image-to-image, inpainting, a professional image editor, and multi-model ranking.
 
+Real API configuration, device installation, generated-result usability, UI experience, and final trade-offs were confirmed by the human developer; AI did not replace the final judgment.
+
 ## AI Role
 
 GPT was used for task breakdown, planning, prompt design, risk review, and documentation drafts. Codex was used for implementation support, build checks, evidence organization, submission material generation, and Git operations. AI output was constrained by human goals and checked through human judgment; the project is not presented as “entirely built by AI.”

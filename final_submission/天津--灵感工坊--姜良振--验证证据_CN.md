@@ -34,7 +34,7 @@
 
 ## 本地加密验证
 
-推荐使用 `LOCAL-VERIFY-2026` 作为验证关键词：在演示模式生成包含该关键词的内容，收藏或保存后重启 App，确认历史仍可读。再使用 Android Studio Device Explorer 或 `adb run-as` 检查 `shared_prefs`，确认该关键词未以明文出现。生成图片后检查 `files/generated_images_encrypted/` 下新增 `.imgenc` 文件不可直接作为图片打开。保存到相册后的图片属于用户主动导出的明文副本，不再属于 App 私有加密存储边界。
+推荐使用 `LOCAL-VERIFY-2026` 作为验证关键词：在演示模式生成包含该关键词的内容，收藏或保存后重启 App，确认历史仍可读。App 内可读内容不等于本地明文存储；本次补充使用 `adb run-as` 在 App 私有 `shared_prefs` / `files` 范围搜索该关键词，日志结果为 `NO_PLAINTEXT_MATCH`，支持私有落盘文件不能直接读出该用户内容。生成图片长期目录 `files/generated_images_encrypted/` 的文件头检查已记录；当前设备该目录不存在或为空，待生成图片后补充文件头证据。保存到相册或系统分享属于用户主动导出的明文副本，不再属于 App 私有加密存储边界。
 
 ## 异常场景
 
@@ -55,5 +55,10 @@
 - `evidence/logs/apk_info.txt`
 - `evidence/logs/git_info.txt`
 - `evidence/logs/version_info.txt`
-- `evidence/screenshots/`：未找到用户提供截图，待补充。
-- `evidence/videos/`：未找到用户提供录屏，待补充。
+- `evidence/logs/encryption_verify_log.txt`
+- `evidence/logs/encryption_verify_log_numbered.txt`
+- `evidence/logs/encrypted_image_file_check.txt`
+- `evidence/logs/encrypted_image_file_check_numbered.txt`
+- `evidence/logs/encryption_screenshot_targets.txt`
+- `evidence/screenshots/`：用户已手动补充 13 张截图，需最终审阅。
+- `evidence/videos/`：用户已手动补充 1 个录屏，需最终审阅。

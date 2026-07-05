@@ -34,7 +34,7 @@
 
 ## Local Encryption Validation
 
-Use `LOCAL-VERIFY-2026` as a validation keyword. Generate demo content containing the keyword, favorite or save it, restart the app, and confirm History still loads. Then use Android Studio Device Explorer or `adb run-as` to inspect `shared_prefs` and confirm the keyword is not present as plaintext. After generating an image, verify that new files under `files/generated_images_encrypted/` are `.imgenc` files and cannot be opened directly as images. Gallery-saved images are user-initiated plaintext exports and are outside app-private encrypted storage.
+Use `LOCAL-VERIFY-2026` as a validation keyword. Generate demo content containing the keyword, favorite or save it, restart the app, and confirm History still loads. App-readable content is not the same as local plaintext storage; this evidence set uses `adb run-as` to search the app-private `shared_prefs` / `files` scope for the keyword. The log result is `NO_PLAINTEXT_MATCH`, supporting that the private persisted files do not directly expose this user content as plaintext. The generated-image long-term directory `files/generated_images_encrypted/` file-header check is recorded; on the current device the directory is missing or empty, so image file-header evidence remains pending until an image is generated. Gallery save or system share is a user-initiated plaintext export and is outside app-private encrypted storage.
 
 ## Error Scenarios
 
@@ -55,5 +55,10 @@ Use `LOCAL-VERIFY-2026` as a validation keyword. Generate demo content containin
 - `evidence/logs/apk_info.txt`
 - `evidence/logs/git_info.txt`
 - `evidence/logs/version_info.txt`
-- `evidence/screenshots/`: no user-provided screenshots found; pending user supplement.
-- `evidence/videos/`: no user-provided recording found; pending user supplement.
+- `evidence/logs/encryption_verify_log.txt`
+- `evidence/logs/encryption_verify_log_numbered.txt`
+- `evidence/logs/encrypted_image_file_check.txt`
+- `evidence/logs/encrypted_image_file_check_numbered.txt`
+- `evidence/logs/encryption_screenshot_targets.txt`
+- `evidence/screenshots/`: 13 user-supplied screenshots are present and require final review.
+- `evidence/videos/`: 1 user-supplied recording is present and requires final review.

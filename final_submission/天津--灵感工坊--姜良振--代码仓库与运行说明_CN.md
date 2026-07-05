@@ -34,7 +34,7 @@ app\build\outputs\apk\debug\app-debug.apk
 adb install -r app\build\outputs\apk\debug\app-debug.apk
 ```
 
-本次整理阶段连接到设备 `10AC8M0C61001B1`，Android 版本为 `14`。安装尝试因设备端拒绝确认返回 `INSTALL_FAILED_ABORTED: User rejected permissions`，需用户在设备上允许安装后补充成功日志。
+本次最终打包阶段连接到设备 10AC8M0C61001B1，Android 14。执行 adb install -r app\build\outputs\apk\debug\app-debug.apk，安装结果为 Success。
 
 ## API 配置
 
