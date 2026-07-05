@@ -4,7 +4,7 @@
 
 - GitHub repository: https://github.com/wuhuan818/ai-homework-android
 - Final branch: stage15-final-submission
-- Current commit: `744fdf0e9440395833efe53e5bb617f534e53c44`
+- Current commit: see `git rev-parse HEAD` and `evidence/logs/git_info.txt` from the final packaging run.
 
 ## Build Environment
 

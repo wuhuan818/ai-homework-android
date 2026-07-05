@@ -8,7 +8,7 @@
 - APK submission path: `天津--灵感工坊--姜良振--APK-debug.apk`
 - APK size: 16,056,638 bytes, about 15.31 MB
 - APK SHA-256: `B38E4FE99B30913C2D942BB7D3AD7B7D132C5DFE7B29A8BE37DFC456C372CE0A`
-- Current commit: `744fdf0e9440395833efe53e5bb617f534e53c44`
+- Current commit: see `git rev-parse HEAD` and `evidence/logs/git_info.txt` from the final packaging run.
 - Current branch: `stage15-final-submission`
 
 ## Device Install Evidence

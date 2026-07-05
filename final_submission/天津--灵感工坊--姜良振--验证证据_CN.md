@@ -8,7 +8,7 @@
 - APK 提交路径：`天津--灵感工坊--姜良振--APK-debug.apk`
 - APK 大小：16,056,638 bytes，约 15.31 MB
 - APK SHA-256：`B38E4FE99B30913C2D942BB7D3AD7B7D132C5DFE7B29A8BE37DFC456C372CE0A`
-- 当前 commit：`744fdf0e9440395833efe53e5bb617f534e53c44`
+- 当前 commit：以最终打包时 `git rev-parse HEAD` 和 `evidence/logs/git_info.txt` 记录为准。
 - 当前分支：`stage15-final-submission`
 
 ## 真机安装证据

@@ -4,7 +4,7 @@
 
 - GitHub 仓库：https://github.com/wuhuan818/ai-homework-android
 - 最终分支：stage15-final-submission
-- 当前 commit：`744fdf0e9440395833efe53e5bb617f534e53c44`
+- 当前 commit：以最终打包时 `git rev-parse HEAD` 和 `evidence/logs/git_info.txt` 记录为准。
 
 ## 构建环境
 
