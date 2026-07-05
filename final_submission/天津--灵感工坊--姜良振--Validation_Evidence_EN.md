@@ -34,7 +34,7 @@
 
 ## Local Encryption Validation
 
-Use `LOCAL-VERIFY-2026` as a validation keyword. Generate demo content containing the keyword, favorite or save it, restart the app, and confirm History still loads. App-readable content is not the same as local plaintext storage; this evidence set uses `adb run-as` to search the app-private `shared_prefs` / `files` scope for the keyword. The log result is `NO_PLAINTEXT_MATCH`, supporting that the private persisted files do not directly expose this user content as plaintext. The generated-image long-term directory `files/generated_images_encrypted/` file-header check is recorded; on the current device the directory is missing or empty, so image file-header evidence remains pending until an image is generated. Gallery save or system share is a user-initiated plaintext export and is outside app-private encrypted storage.
+Use `LOCAL-VERIFY-2026` as a validation keyword. Generate demo content containing the keyword, favorite or save it, restart the app, and confirm History still loads. App-readable content is not the same as local plaintext storage; this evidence set uses `adb run-as` to search the app-private `shared_prefs` / `files` scope for the keyword. The log result is `NO_PLAINTEXT_MATCH`, supporting that the private persisted files do not directly expose this user content as plaintext. The generated-image long-term directory `files/generated_images_encrypted/` file-header check is complete; the selected `.imgenc` file's first 16 bytes are not a common PNG/JPEG/WebP plaintext image header. Gallery save or system share is a user-initiated plaintext export and is outside app-private encrypted storage.
 
 ## Error Scenarios
 

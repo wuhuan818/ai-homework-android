@@ -15,7 +15,7 @@
 | AI text editing and format conversion | Rewrite candidates and Markdown/plain text conversion covered |
 | At least two basic image-processing abilities | Rotate, watermark, black-and-white filter, center crop, and gesture box crop covered |
 | Favorites, history, system sharing | Covered |
-| Local encrypted storage evidence | Android Keystore + AES-GCM verification method documented, with adb run-as plaintext-search logs added; image file-header evidence is pending until an image is generated |
+| Local encrypted storage evidence | Android Keystore + AES-GCM verification method documented, with adb run-as plaintext-search logs and encrypted image file-header logs added |
 | Error scenario | Missing key, network/API errors, image load failure, and image generation failure documented |
 | Screenshots or recording | 13 user-supplied screenshots and 1 recording are present and require final review |
 | No real API keys | Sensitive-content check performed; no real key included in final package |
